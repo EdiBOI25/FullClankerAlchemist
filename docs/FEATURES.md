@@ -11,7 +11,7 @@
 
 # Non-functional features
 
-- [ ] Allow for "unreal" itmes - fantasy, sci-fi etc.
+- [ ] Allow for "unreal" items - fantasy, sci-fi etc.
 - [ ] AI is called only for new pairs; known pairs come from the DB
 - [ ] No duplicate items (case-insensitive names); AI reuses similar existing items
 - [ ] If the icon service is down, the merge still works (emoji fallback)
