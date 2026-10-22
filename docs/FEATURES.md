@@ -28,7 +28,7 @@
   - [ ] Local embedding model all-MiniLM-L6-v2 (~90 MB, runs on CPU, no API key) - *do some research on this. check if there are better/smaller/newer models*
 - [ ] `/chat` endpoint (for Postman and more)
 - [ ] Database (SQLite should be fine)
-- [ ] REST Api
+- [ ] REST API
 - [ ] *(Optional, but may be required)* Docker container (DB + vector file on a mounted volume, embedding model cached in the image)
 
 **Not required**:
