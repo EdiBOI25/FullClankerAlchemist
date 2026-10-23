@@ -15,7 +15,7 @@ Little Alchemy, but infinite. Start with the base elements; combine any two and 
 | REST | `GET /items`, `POST /combine {a, b}`, `GET /recipes` |
 | AI | Combination generation via Spring AI (Anthropic), structured output + tool calling (`find_item` to reuse existing items) |
 | MCP | Same tools exposed to external clients: `list_items`, `combine`, `get_recipe` |
-| Docker | App image + mounted volume for `site.db` |
+| Docker | App image + mounted volume for `alchemist.db` |
 
 ## Icons
 - Iconify search API (keyless): `https://api.iconify.design/search?query=dinosaur`
