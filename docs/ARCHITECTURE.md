@@ -49,7 +49,7 @@ Planned names; classes are added as the features get built.
 
 ## Database
 
-SQLite file, see [ADR-0001](adr/0001-sqlite-database.md).
+SQLite file, see [ADR-0001](adr/0001-sqlite-database.md). Schema in `schema.sql`, foreign keys enforced, see [ADR-0007](adr/0007-hand-written-schema.md).
 
 | Table | Columns |
 |---|---|
