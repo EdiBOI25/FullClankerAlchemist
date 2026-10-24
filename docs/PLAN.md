@@ -44,7 +44,7 @@ Work is split into phases. GitHub issues are filed one phase at a time: finish a
 
 ## Phase 7 – Docker
 - [ ] chore: Dockerfile with the embedding model cached in the image
-- [ ] chore: `compose.yaml` with the app and a volume for the DB and the vector file; remove the `*-docker-compose` dependencies
+- [ ] chore: `compose.yaml` with the app and a volume for the DB and the vector file
 
 ## Not planned
 - Drag-and-drop website (belongs in a frontend repo)
