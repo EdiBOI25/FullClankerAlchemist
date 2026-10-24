@@ -3,7 +3,7 @@
 Work is split into phases. GitHub issues are filed one phase at a time: finish a phase, then file the next one's issues. Update this file as things change.
 
 ## Phase 1 – Data model
-- [ ] #3 feat: `Item` and `Tag` entities and repositories (item names unique ignoring case, tags lowercase, data kept across restarts)
+- [x] #3 feat: `Item` and `Tag` entities and repositories (item names unique ignoring case, tags lowercase, data kept across restarts)
 - [ ] #4 feat: `Recipe` entity and repository (pair stored ordered and unique, lookup by pair)
 - [ ] #5 feat: seed fire, water, earth and air at startup, without duplicating them on restart
 
