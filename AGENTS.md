@@ -31,7 +31,7 @@ Hexagonal (ports & adapters). Read [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) 
 - Branch names: `type/short-description` with `feature`, `fix`, `docs`, `chore`, `refactor`, `test`.
 - Commits: `type: description` (Conventional Commits, `feat` instead of `feature`).
 - Keep changes small: one slice per PR.
-- Non-trivial logic gets a test. Never edit a failing test just to make it pass.
+- Every `feat`/`fix` issue names the behaviour its tests must cover; the PR adds those tests. Never edit a failing test just to make it pass.
 - Never commit `.env`, `*.db` or the vector store file.
 - Propose a plan before larger changes. Don't push or open PRs unless asked.
 
