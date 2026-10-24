@@ -1,5 +1,12 @@
 # Contributing
 
+## Issues
+- Filed one phase at a time from [docs/PLAN.md](docs/PLAN.md): finish a phase, then file the next one.
+- Title: `type: description`, same types as commits.
+- Use the **Task** template. Acceptance criteria are a plain numbered list (`1.`, `2.`, ...).
+- `feat`/`fix` issues end with a `Tests:` criterion naming the behaviour to test.
+- Dependencies: set **Blocked by** under *Relationships* in the issue sidebar.
+
 ## Branches
 `master` is protected: no direct pushes, no force pushes, no deletion. Every change goes through a pull request.
 
