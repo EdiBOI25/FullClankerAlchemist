@@ -15,3 +15,12 @@ CREATE TABLE IF NOT EXISTS item_tag (
     tag_id  INTEGER NOT NULL REFERENCES tag (id),
     PRIMARY KEY (item_id, tag_id)
 );
+
+CREATE TABLE IF NOT EXISTS recipe (
+    id         INTEGER PRIMARY KEY,
+    item_a_id  INTEGER NOT NULL REFERENCES item (id),
+    item_b_id  INTEGER NOT NULL REFERENCES item (id),
+    result_id  INTEGER NOT NULL REFERENCES item (id),
+    UNIQUE (item_a_id, item_b_id),
+    CHECK (item_a_id <= item_b_id)
+);
