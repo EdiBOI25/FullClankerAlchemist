@@ -1,10 +1,10 @@
 # Plan
 
-Work is split into phases. GitHub issues are filed one phase at a time: finish a phase, then file the next one's issues. Update this file as things change.
+A general guide on where to go next, not a list of every GitHub issue. Work is split into phases; issues are filed one phase at a time: finish a phase, then file the next one's issues. Tick items as they're done and change the plan only when the direction changes. Extra issues (fixes, chores) aren't listed here.
 
 ## Phase 1 – Data model
 - [x] #3 feat: `Item` and `Tag` entities and repositories (item names unique ignoring case, tags lowercase, data kept across restarts)
-- [ ] #4 feat: `Recipe` entity and repository (pair stored ordered and unique, lookup by pair)
+- [x] #4 feat: `Recipe` entity and repository (pair stored ordered and unique, lookup by pair)
 - [ ] #5 feat: seed fire, water, earth and air at startup, without duplicating them on restart
 
 ## Phase 2 – Read API
