@@ -9,7 +9,7 @@ import org.hibernate.mapping.Column;
 import org.hibernate.mapping.Table;
 import org.hibernate.mapping.UniqueKey;
 
-/** SQLite dialect that writes multi-column unique constraints into CREATE TABLE; the stock one silently drops them. */
+/** SQLite dialect that writes multi-column unique constraints into CREATE TABLE. */
 public class SqliteDialect extends SQLiteDialect {
 
 	private final UniqueDelegate uniqueDelegate = new AlterTableUniqueDelegate(this) {
@@ -32,6 +32,11 @@ public class SqliteDialect extends SQLiteDialect {
 
 		@Override
 		public String getAlterTableToAddUniqueKeyCommand(UniqueKey key, Metadata metadata, SqlStringGenerationContext context) {
+			return "";
+		}
+
+		@Override
+		public String getAlterTableToDropUniqueKeyCommand(UniqueKey key, Metadata metadata, SqlStringGenerationContext context) {
 			return "";
 		}
 	};
