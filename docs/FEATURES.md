@@ -1,6 +1,6 @@
 # Functional features
 
-- [ ] User starts with 4 items: water, air, fire and earth
+- [x] User starts with 4 items: water, air, fire and earth
 - [ ] User is able to merge two items via AI chat
 - [ ] *(Optional, if website is needed)* User is able to merge two items via *drag and drop*
 - [ ] AI decides the result of the merge
