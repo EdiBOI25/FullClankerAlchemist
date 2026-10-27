@@ -36,3 +36,4 @@ build/
 *.db
 *.db-*
 .env
+docs/ai-issue-workflow.md
