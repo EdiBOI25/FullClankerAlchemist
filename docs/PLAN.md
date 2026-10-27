@@ -5,7 +5,7 @@ A general guide on where to go next, not a list of every GitHub issue. Work is s
 ## Phase 1 – Data model
 - [x] #3 feat: `Item` and `Tag` entities and repositories (item names unique ignoring case, tags lowercase, data kept across restarts)
 - [x] #4 feat: `Recipe` entity and repository (pair stored ordered and unique, lookup by pair)
-- [ ] #5 feat: seed fire, water, earth and air at startup, without duplicating them on restart
+- [x] #5 feat: seed fire, water, earth and air at startup, without duplicating them on restart
 
 ## Phase 2 – Read API
 - [ ] feat: `GET /items`
