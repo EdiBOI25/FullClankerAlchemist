@@ -30,7 +30,7 @@ lab.site.backend
 ├── adapter/
 │   ├── in/           ItemController, CombineController, ChatController, GameTools (chat + MCP)
 │   └── out/          ClaudeItemGenerator, IconifyIconProvider, VectorItemSearch
-├── config/           wiring
+├── config/           wiring, SqliteDialect
 └── Application.java
 ```
 
@@ -49,7 +49,7 @@ Planned names; classes are added as the features get built.
 
 ## Database
 
-SQLite file, see [ADR-0001](adr/0001-sqlite-database.md). Schema in `schema.sql`, foreign keys enforced, see [ADR-0007](adr/0007-hand-written-schema.md).
+SQLite file, see [ADR-0001](adr/0001-sqlite-database.md). Hibernate generates the schema from the entities, foreign keys enforced, see [ADR-0008](adr/0008-hibernate-generated-schema.md).
 
 | Table | Columns |
 |---|---|

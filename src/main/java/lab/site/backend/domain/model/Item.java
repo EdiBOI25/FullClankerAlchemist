@@ -1,5 +1,6 @@
 package lab.site.backend.domain.model;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -18,6 +19,7 @@ public class Item {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
+	@Column(nullable = false, unique = true, options = "COLLATE NOCASE")
 	private String name;
 
 	private String emoji;
@@ -26,8 +28,8 @@ public class Item {
 
 	@ManyToMany
 	@JoinTable(name = "item_tag",
-			joinColumns = @JoinColumn(name = "item_id"),
-			inverseJoinColumns = @JoinColumn(name = "tag_id"))
+			joinColumns = @JoinColumn(name = "item_id", options = "REFERENCES item (id)"),
+			inverseJoinColumns = @JoinColumn(name = "tag_id", options = "REFERENCES tag (id)"))
 	private Set<Tag> tags = new HashSet<>();
 
 	protected Item() {

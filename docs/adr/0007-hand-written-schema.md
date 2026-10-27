@@ -1,6 +1,6 @@
 # 7. Hand-written schema with enforced foreign keys
 
-**Status:** Accepted
+**Status:** Superseded by [ADR-0008](0008-hibernate-generated-schema.md)
 
 ## Context
 Hibernate adds foreign keys with `ALTER TABLE`, which SQLite does not support, so a Hibernate-generated schema has none. SQLite also enforces foreign keys only on connections that turn them on.

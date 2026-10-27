@@ -1,5 +1,7 @@
 package lab.site.backend.domain.model;
 
+import jakarta.persistence.CheckConstraint;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -14,6 +16,7 @@ public class Tag {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
+	@Column(nullable = false, unique = true, check = @CheckConstraint(constraint = "name = lower(name)"))
 	private String name;
 
 	protected Tag() {
