@@ -24,7 +24,7 @@ lab.site.backend
 │   ├── model/        Item, Tag, Recipe (JPA entities)
 │   ├── dto/          ItemDto, CombineRequest, CombineResult (records)
 │   └── port/
-│       ├── in/       CombineItems, FindItems
+│       ├── in/       CombineItems, FindItems, FindRecipes
 │       └── out/      ItemRepository, TagRepository, RecipeRepository, ItemGenerator, IconProvider, ItemSearch
 ├── application/      CombineService, ItemService
 ├── adapter/
@@ -42,6 +42,7 @@ Planned names; classes are added as the features get built.
 |---|---|---|
 | `CombineItems` | in | `CombineService` |
 | `FindItems` | in | `ItemService` |
+| `FindRecipes` | in | `RecipeService` |
 | `ItemRepository`, `TagRepository`, `RecipeRepository` | out | Spring Data (generated) |
 | `ItemGenerator` | out | `ClaudeItemGenerator` |
 | `IconProvider` | out | `IconifyIconProvider` |
