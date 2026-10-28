@@ -9,7 +9,7 @@ A general guide on where to go next, not a list of every GitHub issue. Work is s
 
 ## Phase 2 – Read API
 - [x] #13 feat: `GET /items`
-- [ ] #14 feat: `GET /items?tag=` to filter by one or more tags
+- [x] #14 feat: `GET /items?tag=` to filter by one or more tags
 - [ ] #15 feat: `GET /recipes`
 
 ## Phase 3 – Combine
