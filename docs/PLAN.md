@@ -15,7 +15,7 @@ A general guide on where to go next, not a list of every GitHub issue. Work is s
 ## Phase 3 – Combine
 - [ ] chore: load `.env` and add `ANTHROPIC_API_KEY` to `.env.example`
 - [ ] feat: `ItemGenerator` port and `ClaudeItemGenerator` (returns name, tags and emoji; fantasy and sci-fi items allowed)
-- [ ] feat: `CombineService` returns a known recipe (A+B = B+A, an item can combine with itself)
+- [x] feat: `CombineService` returns a known recipe (A+B = B+A, an item can combine with itself)
 - [ ] feat: standard error responses (`ProblemDetail`)
 - [ ] feat: reject items that aren't in the collection
 - [ ] feat: an unknown pair generates a new item and saves the recipe
