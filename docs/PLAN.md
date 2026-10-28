@@ -8,9 +8,9 @@ A general guide on where to go next, not a list of every GitHub issue. Work is s
 - [x] #5 feat: seed fire, water, earth and air at startup, without duplicating them on restart
 
 ## Phase 2 – Read API
-- [ ] feat: `GET /items`
-- [ ] feat: `GET /items?tag=` to filter by one or more tags
-- [ ] feat: `GET /recipes`
+- [x] #13 feat: `GET /items`
+- [ ] #14 feat: `GET /items?tag=` to filter by one or more tags
+- [ ] #15 feat: `GET /recipes`
 
 ## Phase 3 – Combine
 - [ ] chore: load `.env` and add `ANTHROPIC_API_KEY` to `.env.example`
