@@ -36,7 +36,7 @@ class ChatClientItemGeneratorTest {
 	}
 
 	@Test
-	void promptNamesBothItemsAndAllowsFantasyAndSciFi() {
+	void systemPromptHoldsTheRulesAndUserPromptHoldsTheItems() {
 		reply("""
 				{"name": "Steam", "emoji": "💨", "tags": ["gas"]}
 				""");
@@ -45,7 +45,8 @@ class ChatClientItemGeneratorTest {
 
 		ArgumentCaptor<Prompt> prompt = ArgumentCaptor.forClass(Prompt.class);
 		verify(model).call(prompt.capture());
-		assertThat(prompt.getValue().getContents()).contains("fire", "water", "fantasy", "sci-fi");
+		assertThat(prompt.getValue().getSystemMessage().getText()).contains("fantasy", "sci-fi");
+		assertThat(prompt.getValue().getUserMessage().getText()).contains("fire", "water");
 	}
 
 	private void reply(String json) {
