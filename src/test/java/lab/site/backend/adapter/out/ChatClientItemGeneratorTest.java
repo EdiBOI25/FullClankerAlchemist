@@ -10,7 +10,6 @@ import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.model.Generation;
 import org.springframework.ai.chat.prompt.ChatOptions;
 import org.springframework.ai.chat.prompt.Prompt;
-import org.springframework.core.io.ClassPathResource;
 
 import java.util.List;
 
@@ -23,9 +22,7 @@ import static org.mockito.Mockito.when;
 class ChatClientItemGeneratorTest {
 
 	private final ChatModel model = mock(ChatModel.class);
-	private final ChatClientItemGenerator generator = new ChatClientItemGenerator(ChatClient.builder(model),
-			new ClassPathResource("prompts/item-generator-system.st"),
-			new ClassPathResource("prompts/item-generator-user.st"));
+	private final ChatClientItemGenerator generator = new ChatClientItemGenerator(ChatClient.builder(model));
 
 	@Test
 	void mapsTheAiResponse() {
