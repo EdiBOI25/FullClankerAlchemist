@@ -5,7 +5,7 @@ Instructions for AI coding agents (Claude Code, Copilot, Junie, Codex) and human
 ## Project
 Alchemy Item Merger: combine two items, the AI invents the result. See [README.md](README.md) and [docs/FEATURES.md](docs/FEATURES.md).
 
-Stack: Java 21, Spring Boot 4.1, Spring AI 2.0 (Anthropic), SQLite via JPA/Hibernate, Maven. Root package: `lab.site.backend`.
+Stack: Java 21, Spring Boot 4.1, Spring AI 2.0 (Gemini or Anthropic), SQLite via JPA/Hibernate, Maven. Root package: `lab.site.backend`.
 
 ## Commands
 - Build and test: `./mvnw verify` (Windows: `mvnw.cmd verify`)
@@ -18,7 +18,7 @@ Hexagonal (ports & adapters). Read [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) 
 - `domain`: entities, DTO records, ports (interfaces). Imports nothing from `application` or `adapter`.
 - `application`: services implementing `port.in`. No HTTP, chat or MCP types.
 - `adapter.in`: REST, chat, MCP. Calls `port.in` only.
-- `adapter.out`: implements `port.out` (Claude, Iconify, vector store).
+- `adapter.out`: implements `port.out` (AI provider, Iconify, vector store).
 - `config`: wiring.
 
 **Dependency rule:** `adapter → application → domain`. Nothing enforces it automatically, so check every import you add.

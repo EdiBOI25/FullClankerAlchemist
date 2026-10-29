@@ -15,7 +15,7 @@
 - [ ] AI is called only for new pairs; known pairs come from the DB
 - [ ] No duplicate items (case-insensitive names); AI reuses similar existing items
 - [ ] If the icon service is down, the merge still works (emoji fallback)
-- [ ] API keys come from environment variables, never committed
+- [x] API keys come from environment variables, never committed
 - [ ] Data survives app restarts
 - [ ] AI result is validated before saving (name + at least one tag); invalid -> retry once, then error
 - [ ] Vector store can be rebuilt from the DB if its file is lost

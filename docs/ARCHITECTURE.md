@@ -8,7 +8,7 @@ Hexagonal architecture (ports & adapters). Why: [ADR-0004](adr/0004-hexagonal-ar
 |---|---|---|---|
 | Domain | `domain` | entities (`model`), DTO records (`dto`), ports (`port.in`, `port.out`) | nothing |
 | Application | `application` | services implementing `port.in` | `domain` |
-| Adapters | `adapter.in`, `adapter.out` | REST, chat, MCP / AI provider (Gemini or Claude), Iconify, vector store | `application`, `domain` |
+| Adapters | `adapter.in`, `adapter.out` | REST, chat, MCP / AI provider, Iconify, vector store | `application`, `domain` |
 | Config | `config` | wiring | everything |
 
 **Dependency rule:** `adapter → application → domain`. `domain` never imports `application` or `adapter`. `application` knows nothing about HTTP, chat or MCP.
@@ -30,7 +30,7 @@ lab.site.backend
 ├── adapter/
 │   ├── in/           ItemController, RecipeController, CombineController, ChatController, GameTools (chat + MCP)
 │   └── out/          ChatClientItemGenerator, IconifyIconProvider, VectorItemSearch
-├── config/           wiring, SqliteDialect
+├── config/           wiring, SqliteDialect, AiProviderCheck
 └── Application.java
 ```
 
