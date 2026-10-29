@@ -6,6 +6,7 @@ import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.util.StringUtils;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 /** Stops startup when AI_PROVIDER is unknown or the selected provider has no API key. */
 public class AiProviderCheck implements EnvironmentPostProcessor {
@@ -22,8 +23,8 @@ public class AiProviderCheck implements EnvironmentPostProcessor {
 		Provider provider = PROVIDERS.stream()
 				.filter(p -> p.name().equals(selected))
 				.findFirst()
-				.orElseThrow(() -> new IllegalStateException(
-						"AI_PROVIDER is '" + selected + "'; use google-genai or anthropic"));
+				.orElseThrow(() -> new IllegalStateException("AI_PROVIDER is '" + selected + "'; use "
+						+ PROVIDERS.stream().map(Provider::name).collect(Collectors.joining(" or "))));
 		if (StringUtils.hasText(env.getProperty(provider.keyProperty()))) {
 			return;
 		}

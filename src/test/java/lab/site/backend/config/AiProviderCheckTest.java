@@ -29,8 +29,7 @@ class AiProviderCheckTest {
 	@Test
 	void geminiWithItsKeyStarts() {
 		MockEnvironment env = env("google-genai")
-				.withProperty("spring.ai.google.genai.api-key", "g")
-				.withProperty("spring.ai.anthropic.api-key", "a");
+				.withProperty("spring.ai.google.genai.api-key", "g");
 
 		assertThatCode(() -> check.postProcessEnvironment(env, null)).doesNotThrowAnyException();
 	}
@@ -38,7 +37,6 @@ class AiProviderCheckTest {
 	@Test
 	void anthropicWithItsKeyStarts() {
 		MockEnvironment env = env("anthropic")
-				.withProperty("spring.ai.google.genai.api-key", "g")
 				.withProperty("spring.ai.anthropic.api-key", "a");
 
 		assertThatCode(() -> check.postProcessEnvironment(env, null)).doesNotThrowAnyException();
@@ -75,6 +73,7 @@ class AiProviderCheckTest {
 
 		assertThatThrownBy(() -> check.postProcessEnvironment(env, null))
 				.isInstanceOf(IllegalStateException.class)
-				.hasMessageContaining("AI_PROVIDER is '" + provider + "'");
+				.hasMessageContaining("AI_PROVIDER is '" + provider + "'")
+				.hasMessageEndingWith("use google-genai or anthropic");
 	}
 }
