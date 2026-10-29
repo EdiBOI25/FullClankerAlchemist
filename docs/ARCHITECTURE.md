@@ -84,6 +84,13 @@ CombineController (adapter.in)
 
 Steps 3 and 6 (icon) arrive in later phases; until then they are skipped. Why generate once: [ADR-0003](adr/0003-generate-combinations-once.md).
 
+## Prompts
+
+Prompt text lives in `src/main/resources/prompts/`, one StringTemplate file per role: `<feature>-system.st` (who the model is, the rules) and `<feature>-user.st` (the input, with `{placeholders}`).
+
+- Don't describe the output format: `.entity(...)` appends the JSON schema.
+- Escape literal `{` `}` (StringTemplate syntax).
+
 ## Decisions
 
 All decisions are in [`adr/`](adr/).

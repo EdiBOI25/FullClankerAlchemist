@@ -14,7 +14,7 @@ A general guide on where to go next, not a list of every GitHub issue. Work is s
 
 ## Phase 3 – Combine
 - [x] #19 chore: load `.env` and configure Gemini (default) and Anthropic, picked by `AI_PROVIDER`
-- [ ] #20 feat: `ItemGenerator` port and Spring AI generator (returns name, tags and emoji; fantasy and sci-fi items allowed)
+- [x] #20 feat: `ItemGenerator` port and Spring AI generator (returns name, tags and emoji; fantasy and sci-fi items allowed)
 - [x] #21 feat: `CombineService` returns a known recipe (A+B = B+A, an item can combine with itself)
 - [ ] #22 feat: reject items that aren't in the collection
 - [ ] #23 feat: an unknown pair generates a new item and saves the recipe
