@@ -30,7 +30,7 @@ lab.site.backend
 ├── adapter/
 │   ├── in/           ItemController, RecipeController, CombineController, ChatController, GameTools (chat + MCP)
 │   └── out/          ChatClientItemGenerator, IconifyIconProvider, VectorItemSearch
-├── config/           wiring, SqliteDialect, AiProviderCheck
+├── config/           wiring, SqliteDialect, BaseItemSeeder, AiProviderCheck
 └── Application.java
 ```
 

@@ -9,7 +9,7 @@ Combining needs an LLM. Gemini's API has a free tier, so every teammate can run 
 - Both starters are on the classpath; `AI_PROVIDER` in `.env` (mapped to `spring.ai.model.chat`) picks one, `google-genai` by default.
 - Code uses Spring AI's `ChatClient`, never a provider SDK.
 - Fail fast: `config.AiProviderCheck` stops startup when `AI_PROVIDER` is blank or unknown, or the selected provider has no key. The provider is never switched automatically.
-- Tests pin Gemini with a dummy key and never call the AI.
+- Default tests pin Gemini with a dummy key and never call the AI; live tests run only when a key is set.
 
 ## Consequences
 - Switching provider is a `.env` change, not a code change.
