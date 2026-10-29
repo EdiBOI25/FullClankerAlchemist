@@ -8,13 +8,13 @@ Hexagonal architecture (ports & adapters). Why: [ADR-0004](adr/0004-hexagonal-ar
 |---|---|---|---|
 | Domain | `domain` | entities (`model`), DTO records (`dto`), ports (`port.in`, `port.out`) | nothing |
 | Application | `application` | services implementing `port.in` | `domain` |
-| Adapters | `adapter.in`, `adapter.out` | REST, chat, MCP / Claude, Iconify, vector store | `application`, `domain` |
+| Adapters | `adapter.in`, `adapter.out` | REST, chat, MCP / AI provider (Gemini or Claude), Iconify, vector store | `application`, `domain` |
 | Config | `config` | wiring | everything |
 
 **Dependency rule:** `adapter → application → domain`. `domain` never imports `application` or `adapter`. `application` knows nothing about HTTP, chat or MCP.
 
 - **in** = the outside calls the app (Postman, chat, MCP client).
-- **out** = the app calls the outside (DB, Claude, Iconify, vector store).
+- **out** = the app calls the outside (DB, AI provider, Iconify, vector store).
 
 ## Folder structure
 
@@ -22,14 +22,14 @@ Hexagonal architecture (ports & adapters). Why: [ADR-0004](adr/0004-hexagonal-ar
 lab.site.backend
 ├── domain/
 │   ├── model/        Item, Tag, Recipe (JPA entities)
-│   ├── dto/          ItemDto, CombineRequest, CombineResult (records)
+│   ├── dto/          ItemDto, RecipeDto, CombineRequest, CombineResult (records)
 │   └── port/
 │       ├── in/       CombineItems, FindItems, FindRecipes
 │       └── out/      ItemRepository, TagRepository, RecipeRepository, ItemGenerator, IconProvider, ItemSearch
-├── application/      CombineService, ItemService
+├── application/      CombineService, ItemService, RecipeService
 ├── adapter/
-│   ├── in/           ItemController, CombineController, ChatController, GameTools (chat + MCP)
-│   └── out/          ClaudeItemGenerator, IconifyIconProvider, VectorItemSearch
+│   ├── in/           ItemController, RecipeController, CombineController, ChatController, GameTools (chat + MCP)
+│   └── out/          ChatClientItemGenerator, IconifyIconProvider, VectorItemSearch
 ├── config/           wiring, SqliteDialect
 └── Application.java
 ```
@@ -44,7 +44,7 @@ Planned names; classes are added as the features get built.
 | `FindItems` | in | `ItemService` |
 | `FindRecipes` | in | `RecipeService` |
 | `ItemRepository`, `TagRepository`, `RecipeRepository` | out | Spring Data (generated) |
-| `ItemGenerator` | out | `ClaudeItemGenerator` |
+| `ItemGenerator` | out | `ChatClientItemGenerator` |
 | `IconProvider` | out | `IconifyIconProvider` |
 | `ItemSearch` | out | `VectorItemSearch` |
 
@@ -76,7 +76,7 @@ CombineController (adapter.in)
       1. order the pair (a ≤ b)
       2. RecipeRepository: pair known? → return its result
       3. ItemSearch: find similar existing items   port.out
-      4. ItemGenerator: ask Claude for the result  port.out
+      4. ItemGenerator: ask the AI for the result  port.out
       5. validate (name + at least one tag), retry once
       6. reuse the item if the name exists, else save it (icon via IconProvider)
       7. save the recipe, return the result
