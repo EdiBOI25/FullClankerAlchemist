@@ -25,7 +25,7 @@ public class ChatClientItemGenerator implements ItemGenerator {
 				.system(SYSTEM_PROMPT)
 				.user(u -> u.text(USER_PROMPT).param("a", nameA).param("b", nameB))
 				.call()
-				.entity(GeneratedItem.class);
+				.entity(GeneratedItem.class, ChatClient.EntityParamSpec::useProviderStructuredOutput);
 	}
 
 }
