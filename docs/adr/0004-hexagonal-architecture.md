@@ -1,6 +1,6 @@
 # 4. Hexagonal architecture
 
-**Status:** Accepted
+**Status:** Accepted; since [ADR-0010](0010-microservices.md) it applies to `alchemist-service` only
 
 ## Context
 Two developers and several AI agents (Claude Code, Copilot, Junie, Codex) work on the code. We want clear contracts and logic that does not depend on the web layer. The starting idea was three layers: `include` (contracts), `lib` (reusable logic), `src` (wiring).

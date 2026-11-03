@@ -1,4 +1,4 @@
-# Alchemy Item Merger
+# FullClankerAlchemist
 
 Little Alchemy, but infinite. Start with the four base elements, combine any two, and the AI invents the result.
 

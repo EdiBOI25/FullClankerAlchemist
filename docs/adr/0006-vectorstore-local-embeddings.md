@@ -1,6 +1,6 @@
 # 6. File-based vector store with local embeddings
 
-**Status:** Proposed (pending the embedding model research)
+**Status:** Rejected: the teacher requires Chroma. A new ADR comes with the embedding model research (RAG phase).
 
 ## Context
 RAG and a vector store are required. They are used to search items by meaning and to show the AI similar existing items when combining. Anthropic has no embedding model. The dev laptop has 8 GB RAM and an i3 CPU.

@@ -1,0 +1,13 @@
+Mark 5: The project integrates Spring AI with at least one AI service and follows a microservices-based architecture.
+
+Mark 6: The project includes validation for at least 10 fields, implements a minimum of 10 unit tests (including at least one test using a mocked dependency), and uses Docker to containerize and run the application (must use a docker-compose yaml file for multiple containers).
+
+Mark 7: The project demonstrates context-aware or parameterized AI interactions, enabling more dynamic and intelligent responses.
+
+Example: The AI remembers previous user messages or customizes its responses based on a selected tone, topic, or role.
+
+Mark 8: The project implements a RAG pipeline using Spring AI and ChromaDB (or a similar vector database).
+
+Mark 9: The project uses Spring Security to implement authentication and authorization.
+
+Mark 10: The project implements an MCP server.
