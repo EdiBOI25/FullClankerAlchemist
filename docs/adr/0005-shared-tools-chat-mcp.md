@@ -1,6 +1,6 @@
 # 5. One set of tools for chat and MCP
 
-**Status:** Accepted
+**Status:** Superseded by [ADR-0010](0010-microservices.md)
 
 ## Context
 The `/chat` endpoint and the MCP server need the same actions: list items, combine, search.

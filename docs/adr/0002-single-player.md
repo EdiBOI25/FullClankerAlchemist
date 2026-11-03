@@ -1,6 +1,6 @@
 # 2. Single player, no accounts
 
-**Status:** Accepted
+**Status:** Superseded by [ADR-0011](0011-accounts-and-per-user-collections.md)
 
 ## Context
 College project. Accounts (login, logout, auth) are not required.

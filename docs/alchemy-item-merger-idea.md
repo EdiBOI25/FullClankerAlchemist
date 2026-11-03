@@ -1,4 +1,6 @@
-# Alchemy Item Merger
+# FullClankerAlchemist
+
+> Original idea. The current state is in [README](../README.md), [FEATURES](FEATURES.md) and [ARCHITECTURE](ARCHITECTURE.md).
 
 Little Alchemy, but infinite. Start with the base elements; combine any two and the AI invents the result.
 
