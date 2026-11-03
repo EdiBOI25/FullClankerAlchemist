@@ -1,19 +1,30 @@
 package lab.site.backend.application;
 
+import jakarta.persistence.EntityManager;
 import lab.site.backend.domain.dto.CombineResult;
+import lab.site.backend.domain.dto.GeneratedItem;
 import lab.site.backend.domain.model.Item;
 import lab.site.backend.domain.model.Recipe;
+import lab.site.backend.domain.model.Tag;
 import lab.site.backend.domain.port.in.CombineItems;
+import lab.site.backend.domain.port.out.ItemGenerator;
 import lab.site.backend.domain.port.out.ItemRepository;
 import lab.site.backend.domain.port.out.RecipeRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
 @SpringBootTest
 @Transactional
@@ -28,6 +39,12 @@ class CombineServiceTest {
 	@Autowired
 	private RecipeRepository recipes;
 
+	@Autowired
+	private EntityManager em;
+
+	@MockitoBean
+	private ItemGenerator generator;
+
 	@Test
 	void knownPairReturnsResultWithIsNewFalse() {
 		Item fire = items.findByNameIgnoreCase("fire").orElseThrow();
@@ -39,6 +56,7 @@ class CombineServiceTest {
 
 		assertThat(result.item().name()).isEqualTo("steam");
 		assertThat(result.isNew()).isFalse();
+		verifyNoInteractions(generator);
 	}
 
 	@Test
@@ -64,6 +82,39 @@ class CombineServiceTest {
 
 		assertThat(result.item().name()).isEqualTo("same");
 		assertThat(result.isNew()).isFalse();
+	}
+
+	@Test
+	void unknownPairGeneratesTheItemAndSavesTheRecipe() {
+		Item ice = items.saveAndFlush(new Item("ice", "🧊", Set.of()));
+		Item lava = items.saveAndFlush(new Item("lava", "🌋", Set.of()));
+		when(generator.generate("ice", "lava")).thenReturn(new GeneratedItem(" Obsidian ", "🪨", List.of("volcanic")));
+
+		CombineResult result = combine.combine("lava", "ice");
+		em.flush();
+		em.clear();
+
+		assertThat(result.isNew()).isTrue();
+		assertThat(result.item().name()).isEqualTo("Obsidian");
+		assertThat(result.item().tags()).containsExactly("volcanic");
+		assertThat(items.findByNameIgnoreCase("obsidian").orElseThrow().getTags())
+				.extracting(Tag::getName)
+				.containsExactly("volcanic");
+		assertThat(recipes.findByItemA_IdAndItemB_Id(ice.getId(), lava.getId()))
+				.hasValueSatisfying(recipe -> assertThat(recipe.getResult().getName()).isEqualTo("Obsidian"));
+		verify(generator).generate("ice", "lava");
+	}
+
+	@Test
+	void sameUnknownPairAgainComesFromTheDb() {
+		when(generator.generate(any(), any())).thenReturn(new GeneratedItem("Steam", "💨", List.of("gas")));
+		combine.combine("fire", "water");
+
+		CombineResult again = combine.combine("water", "fire");
+
+		assertThat(again.isNew()).isFalse();
+		assertThat(again.item().name()).isEqualTo("Steam");
+		verify(generator, times(1)).generate(any(), any());
 	}
 
 }
