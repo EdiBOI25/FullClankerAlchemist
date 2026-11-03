@@ -33,7 +33,7 @@ public class CombineService implements CombineItems {
 		this.generator = generator;
 	}
 
-	// Shortcut: the AI call runs inside the DB transaction, so concurrent combines can fail with SQLITE_BUSY; move it out and handle the unique-pair race (ADR-0011) in Phase 5
+	// Shortcut: the AI call runs inside the DB transaction, so concurrent combines can fail with SQLITE_BUSY; move it out and handle the unique-pair race (ADR-0011) in Phase 4/5
 	@Override
 	@Transactional
 	public CombineResult combine(String nameA, String nameB) {

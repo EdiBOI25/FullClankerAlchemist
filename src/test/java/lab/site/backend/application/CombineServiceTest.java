@@ -14,13 +14,16 @@ import lab.site.backend.domain.port.out.TagRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.dao.DataAccessException;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -113,6 +116,8 @@ class CombineServiceTest {
 	void sameUnknownPairAgainComesFromTheDb() {
 		when(generator.generate(any(), any())).thenReturn(new GeneratedItem("Steam", "💨", List.of("gas")));
 		combine.combine("fire", "water");
+		em.flush();
+		em.clear();
 
 		CombineResult again = combine.combine("water", "fire");
 
@@ -150,6 +155,36 @@ class CombineServiceTest {
 
 		assertThat(savedTags("magma")).extracting(Tag::getName).containsExactly("glow");
 		assertThat(tags.count()).isEqualTo(tagCount + 1);
+	}
+
+	@Test
+	void generatorFailureSavesNothing() {
+		Item fire = items.findByNameIgnoreCase("fire").orElseThrow();
+		Item air = items.findByNameIgnoreCase("air").orElseThrow();
+		long itemCount = items.count();
+		RuntimeException failure = new RuntimeException("AI down");
+		when(generator.generate(any(), any())).thenThrow(failure);
+
+		assertThatThrownBy(() -> combine.combine("fire", "air")).isSameAs(failure);
+		assertThat(items.count()).isEqualTo(itemCount);
+		assertThat(recipes.findByItemA_IdAndItemB_Id(fire.getId(), air.getId())).isEmpty();
+	}
+
+	@Test
+	@Transactional(propagation = Propagation.NOT_SUPPORTED)
+	void failedRecipeSaveAlsoRollsBackTheItem() {
+		Item water = items.findByNameIgnoreCase("water").orElseThrow();
+		Item air = items.findByNameIgnoreCase("air").orElseThrow();
+		when(generator.generate(any(), any())).thenAnswer(call -> {
+			recipes.save(new Recipe(water, air, water));
+			return new GeneratedItem("Mist", "🌫️", List.of("gas"));
+		});
+
+		// Shortcut: SQLite's unique violation surfaces as JpaSystemException; map error code 19 in SqliteDialect when the race is handled (Phase 4/5)
+		assertThatThrownBy(() -> combine.combine("water", "air"))
+				.isInstanceOf(DataAccessException.class)
+				.hasMessageContaining("UNIQUE constraint failed");
+		assertThat(items.findByNameIgnoreCase("mist")).isEmpty();
 	}
 
 	private Set<Tag> savedTags(String itemName) {
