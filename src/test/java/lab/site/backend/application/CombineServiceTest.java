@@ -10,6 +10,7 @@ import lab.site.backend.domain.port.in.CombineItems;
 import lab.site.backend.domain.port.out.ItemGenerator;
 import lab.site.backend.domain.port.out.ItemRepository;
 import lab.site.backend.domain.port.out.RecipeRepository;
+import lab.site.backend.domain.port.out.TagRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -38,6 +39,9 @@ class CombineServiceTest {
 
 	@Autowired
 	private RecipeRepository recipes;
+
+	@Autowired
+	private TagRepository tags;
 
 	@Autowired
 	private EntityManager em;
@@ -115,6 +119,43 @@ class CombineServiceTest {
 		assertThat(again.isNew()).isFalse();
 		assertThat(again.item().name()).isEqualTo("Steam");
 		verify(generator, times(1)).generate(any(), any());
+	}
+
+	@Test
+	void generatedTagsAreTrimmedAndLowercased() {
+		when(generator.generate(any(), any())).thenReturn(new GeneratedItem("Magma", "🌋", List.of(" Volcanic ")));
+
+		combine.combine("fire", "earth");
+
+		assertThat(savedTags("magma")).extracting(Tag::getName).containsExactly("volcanic");
+	}
+
+	@Test
+	void existingTagIsReused() {
+		long tagCount = tags.count();
+		when(generator.generate(any(), any())).thenReturn(new GeneratedItem("Magma", "🌋", List.of(" Hot ")));
+
+		combine.combine("fire", "earth");
+
+		assertThat(savedTags("magma")).extracting(Tag::getName).containsExactly("hot");
+		assertThat(tags.count()).isEqualTo(tagCount);
+	}
+
+	@Test
+	void duplicateTagIsSavedOnce() {
+		long tagCount = tags.count();
+		when(generator.generate(any(), any())).thenReturn(new GeneratedItem("Magma", "🌋", List.of("glow", "Glow ")));
+
+		combine.combine("fire", "earth");
+
+		assertThat(savedTags("magma")).extracting(Tag::getName).containsExactly("glow");
+		assertThat(tags.count()).isEqualTo(tagCount + 1);
+	}
+
+	private Set<Tag> savedTags(String itemName) {
+		em.flush();
+		em.clear();
+		return items.findByNameIgnoreCase(itemName).orElseThrow().getTags();
 	}
 
 }
