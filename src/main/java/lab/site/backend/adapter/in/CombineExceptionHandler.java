@@ -2,8 +2,10 @@ package lab.site.backend.adapter.in;
 
 import lab.site.backend.domain.exception.ItemGenerationException;
 import lab.site.backend.domain.exception.ItemNotFoundException;
+import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -25,6 +27,21 @@ public class CombineExceptionHandler {
 	@ExceptionHandler(MethodArgumentNotValidException.class)
 	ProblemDetail handleInvalidRequest(MethodArgumentNotValidException exception) {
 		return problem(HttpStatus.BAD_REQUEST, "Request fields must be valid");
+	}
+
+	@ExceptionHandler(HandlerMethodValidationException.class)
+	ProblemDetail handleInvalidMethodArgument(HandlerMethodValidationException exception) {
+		return problem(HttpStatus.BAD_REQUEST, "Request fields must be valid");
+	}
+
+	@ExceptionHandler(ConstraintViolationException.class)
+	ProblemDetail handleConstraintViolation(ConstraintViolationException exception) {
+		return problem(HttpStatus.BAD_REQUEST, "Request fields must be valid");
+	}
+
+	@ExceptionHandler(IllegalArgumentException.class)
+	ProblemDetail handleIllegalArgument(IllegalArgumentException exception) {
+		return problem(HttpStatus.BAD_REQUEST, exception.getMessage());
 	}
 
 	@ExceptionHandler(HttpMessageNotReadableException.class)
