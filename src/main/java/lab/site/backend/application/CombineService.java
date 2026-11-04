@@ -3,6 +3,7 @@ package lab.site.backend.application;
 import lab.site.backend.domain.dto.CombineResult;
 import lab.site.backend.domain.dto.GeneratedItem;
 import lab.site.backend.domain.dto.ItemDto;
+import lab.site.backend.domain.exception.ItemNotFoundException;
 import lab.site.backend.domain.model.Item;
 import lab.site.backend.domain.model.Recipe;
 import lab.site.backend.domain.model.Tag;
@@ -54,7 +55,7 @@ public class CombineService implements CombineItems {
 			throw new IllegalArgumentException("Item name cannot be blank");
 		}
 		return items.findByNameIgnoreCase(normalizedName)
-				.orElseThrow(() -> new IllegalArgumentException("Unknown item: %s".formatted(normalizedName)));
+				.orElseThrow(() -> new ItemNotFoundException(normalizedName));
 	}
 
 	private CombineResult generate(Item left, Item right) {
