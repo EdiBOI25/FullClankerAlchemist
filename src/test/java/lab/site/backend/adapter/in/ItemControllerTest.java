@@ -50,6 +50,14 @@ class ItemControllerTest {
 	}
 
 	@Test
+	void filterByTagTrimsWhitespace() {
+		assertThat(mvc.get().uri("/items").param("tag", " hot "))
+				.hasStatusOk()
+				.bodyJson()
+				.extractingPath("$[*].name").asArray().containsExactly("fire");
+	}
+
+	@Test
 	void filterByTwoTagsReturnsOnlyItemsWithBoth() {
 		Tag hot = tags.findByName("hot").orElseThrow();
 		Tag solid = tags.findByName("solid").orElseThrow();
@@ -62,8 +70,91 @@ class ItemControllerTest {
 	}
 
 	@Test
+	void filterByCommaSeparatedTagsReturnsOnlyItemsWithBoth() {
+		Tag hot = tags.findByName("hot").orElseThrow();
+		Tag solid = tags.findByName("solid").orElseThrow();
+		items.save(new Item("lava", "🌋", Set.of(hot, solid)));
+
+		assertThat(mvc.get().uri("/items").param("tag", "hot, solid"))
+				.hasStatusOk()
+				.bodyJson()
+				.extractingPath("$[*].name").asArray().containsExactly("lava");
+	}
+
+	@Test
 	void filterByUnknownTagReturnsEmptyList() {
 		assertThat(mvc.get().uri("/items").param("tag", "unknown"))
+				.hasStatusOk()
+				.bodyJson()
+				.extractingPath("$").asArray().isEmpty();
+	}
+
+	@Test
+	void blankTagReturnsBadRequestProblemDetail() {
+		assertThat(mvc.get().uri("/items").param("tag", " "))
+				.hasStatus(400)
+				.hasContentType("application/problem+json");
+	}
+
+	@Test
+	void emptyTagReturnsBadRequestProblemDetail() {
+		assertThat(mvc.get().uri("/items?tag="))
+				.hasStatus(400)
+				.hasContentType("application/problem+json");
+	}
+
+	@Test
+	void arrayTagReturnsBadRequestProblemDetail() {
+		assertThat(mvc.get().uri("/items?tag[]=hot"))
+				.hasStatus(400)
+				.hasContentType("application/problem+json");
+	}
+
+	@Test
+	void overlongArrayTagReturnsBadRequestProblemDetail() {
+		assertThat(mvc.get().uri("/items?tag[]=" + "a".repeat(31) + " "))
+				.hasStatus(400)
+				.hasContentType("application/problem+json");
+	}
+
+	@Test
+	void tooLongTagReturnsBadRequestProblemDetail() {
+		assertThat(mvc.get().uri("/items").param("tag", "a".repeat(31)))
+				.hasStatus(400)
+				.hasContentType("application/problem+json");
+	}
+
+	@Test
+	void tooLongTagAfterTrimmingReturnsBadRequestProblemDetail() {
+		assertThat(mvc.get().uri("/items").param("tag", "a".repeat(30) + " "))
+				.hasStatus(400)
+				.hasContentType("application/problem+json");
+	}
+
+	@Test
+	void tooLongRepeatedTagAfterTrimmingReturnsBadRequestProblemDetail() {
+		assertThat(mvc.get().uri("/items").param("tag", "a".repeat(30) + " ", "hot"))
+				.hasStatus(400)
+				.hasContentType("application/problem+json");
+	}
+
+	@Test
+	void tooLongCommaSeparatedTagAfterTrimmingReturnsBadRequestProblemDetail() {
+		assertThat(mvc.get().uri("/items").param("tag", "a".repeat(30) + " ,hot"))
+				.hasStatus(400)
+				.hasContentType("application/problem+json");
+	}
+
+	@Test
+	void blankCommaSeparatedTagReturnsBadRequestProblemDetail() {
+		assertThat(mvc.get().uri("/items").param("tag", "hot, "))
+				.hasStatus(400)
+				.hasContentType("application/problem+json");
+	}
+
+	@Test
+	void tagAtMaximumLengthIsAccepted() {
+		assertThat(mvc.get().uri("/items").param("tag", "a".repeat(30)))
 				.hasStatusOk()
 				.bodyJson()
 				.extractingPath("$").asArray().isEmpty();
