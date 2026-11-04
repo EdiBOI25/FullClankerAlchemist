@@ -158,6 +158,56 @@ class CombineServiceTest {
 	}
 
 	@Test
+	void existingNameFromTheAiReusesThatItem() {
+		Item steam = items.saveAndFlush(new Item("steam", "🌫️", Set.of()));
+		Item ice = items.saveAndFlush(new Item("ice", "🧊", Set.of()));
+		Item lava = items.saveAndFlush(new Item("lava", "🌋", Set.of()));
+		long itemCount = items.count();
+		when(generator.generate(any(), any())).thenReturn(new GeneratedItem(" STEAM ", "💨", List.of("vapor")));
+
+		CombineResult result = combine.combine("ice", "lava");
+		em.flush();
+		em.clear();
+
+		assertThat(result.isNew()).isFalse();
+		assertThat(result.item().id()).isEqualTo(steam.getId());
+		assertThat(items.count()).isEqualTo(itemCount);
+		assertThat(recipes.findByItemA_IdAndItemB_Id(ice.getId(), lava.getId()))
+				.hasValueSatisfying(recipe -> assertThat(recipe.getResult().getId()).isEqualTo(steam.getId()));
+	}
+
+	@Test
+	void reusedItemKeepsItsEmojiAndTags() {
+		items.saveAndFlush(new Item("steam", "🌫️", Set.of(tags.findByName("gas").orElseThrow())));
+		long tagCount = tags.count();
+		when(generator.generate(any(), any())).thenReturn(new GeneratedItem("Steam", "💨", List.of("vapor")));
+
+		CombineResult result = combine.combine("fire", "water");
+
+		assertThat(result.item().emoji()).isEqualTo("🌫️");
+		assertThat(result.item().tags()).containsExactly("gas");
+		assertThat(savedTags("steam")).extracting(Tag::getName).containsExactly("gas");
+		assertThat(items.findByNameIgnoreCase("steam").orElseThrow().getEmoji()).isEqualTo("🌫️");
+		assertThat(tags.count()).isEqualTo(tagCount);
+	}
+
+	@Test
+	void inputNameFromTheAiReusesThatInput() {
+		Item fire = items.findByNameIgnoreCase("fire").orElseThrow();
+		Item air = items.findByNameIgnoreCase("air").orElseThrow();
+		long itemCount = items.count();
+		when(generator.generate(any(), any())).thenReturn(new GeneratedItem("Fire", "🔥", List.of("hot")));
+
+		CombineResult result = combine.combine("fire", "air");
+
+		assertThat(result.isNew()).isFalse();
+		assertThat(result.item().id()).isEqualTo(fire.getId());
+		assertThat(items.count()).isEqualTo(itemCount);
+		assertThat(recipes.findByItemA_IdAndItemB_Id(Math.min(fire.getId(), air.getId()), Math.max(fire.getId(), air.getId())))
+				.hasValueSatisfying(recipe -> assertThat(recipe.getResult().getId()).isEqualTo(fire.getId()));
+	}
+
+	@Test
 	void generatorFailureSavesNothing() {
 		Item fire = items.findByNameIgnoreCase("fire").orElseThrow();
 		Item air = items.findByNameIgnoreCase("air").orElseThrow();

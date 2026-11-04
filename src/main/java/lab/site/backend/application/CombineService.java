@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Locale;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -33,7 +34,7 @@ public class CombineService implements CombineItems {
 		this.generator = generator;
 	}
 
-	// Shortcut: the AI call runs inside the DB transaction, so concurrent combines can fail with SQLITE_BUSY; move it out and handle the unique-pair race (ADR-0011) in Phase 4/5
+	// Shortcut: the AI call runs inside the DB transaction, so concurrent combines can fail with SQLITE_BUSY; move it out and handle the unique-pair race (ADR-0011) and the item-name race in Phase 4/5
 	@Override
 	@Transactional
 	public CombineResult combine(String nameA, String nameB) {
@@ -44,7 +45,7 @@ public class CombineService implements CombineItems {
 
 		return recipes.findByItemA_IdAndItemB_Id(left.getId(), right.getId())
 				.map(recipe -> new CombineResult(ItemDto.from(recipe.getResult()), false))
-				.orElseGet(() -> new CombineResult(ItemDto.from(generate(left, right)), true));
+				.orElseGet(() -> generate(left, right));
 	}
 
 	private Item findItem(String name) {
@@ -56,14 +57,21 @@ public class CombineService implements CombineItems {
 				.orElseThrow(() -> new IllegalArgumentException("Unknown item: %s".formatted(normalizedName)));
 	}
 
-	private Item generate(Item left, Item right) {
+	private CombineResult generate(Item left, Item right) {
 		GeneratedItem generated = generator.generate(left.getName(), right.getName());
+		String name = generated.name().trim();
+		// Shortcut: SQLite folds only ASCII case, so "Éclair" and "éclair" become two items; fix both the lookup and the column if accented names matter
+		Optional<Item> existing = items.findByNameIgnoreCase(name);
+		Item result = existing.orElseGet(() -> create(name, generated));
+		recipes.save(new Recipe(left, right, result));
+		return new CombineResult(ItemDto.from(result), existing.isEmpty());
+	}
+
+	private Item create(String name, GeneratedItem generated) {
 		Set<Tag> itemTags = generated.tags().stream()
 				.map(this::findOrCreateTag)
 				.collect(Collectors.toSet());
-		Item item = items.save(new Item(generated.name().trim(), generated.emoji(), itemTags));
-		recipes.save(new Recipe(left, right, item));
-		return item;
+		return items.save(new Item(name, generated.emoji(), itemTags));
 	}
 
 	// Shortcut: duplicates BaseItemSeeder's tag find-or-create; extract a shared helper only if a third caller needs it
