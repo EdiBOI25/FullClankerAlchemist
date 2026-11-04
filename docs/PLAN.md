@@ -23,7 +23,7 @@ Validation with Bean Validation; tests mock `ItemGenerator` with Mockito.
 - [x] #23 feat: an unknown pair generates a new item and saves the recipe
 - [x] #24 feat: validate the AI result (name and at least one tag), retry once, then return an error
 - [x] #25 feat: reuse an existing item when the names match, ignoring case
-- [ ] #26 feat: `POST /combine {a, b}` (errors as `ProblemDetail`)
+- [x] #26 feat: `POST /combine {a, b}` (errors as `ProblemDetail`)
 
 ## Phase 4 – Microservices, Docker, observability, resilience
 - [ ] refactor: move the app into `alchemist-service/` with a root `pom.xml` (one commit of pure `git mv`), then rename it to `fullclanker.alchemist`
