@@ -8,6 +8,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -20,8 +22,11 @@ public class Item {
 	private Long id;
 
 	@Column(nullable = false, unique = true, options = "COLLATE NOCASE")
+	@NotBlank
+	@Size(max = 50)
 	private String name;
 
+	@Size(max = 10)
 	private String emoji;
 
 	private String iconUrl;
