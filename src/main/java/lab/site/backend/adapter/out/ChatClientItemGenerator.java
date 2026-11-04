@@ -1,5 +1,8 @@
 package lab.site.backend.adapter.out;
 
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.ConstraintViolationException;
+import jakarta.validation.Validator;
 import lab.site.backend.domain.dto.GeneratedItem;
 import lab.site.backend.domain.exception.ItemGenerationException;
 import lab.site.backend.domain.port.out.ItemGenerator;
@@ -8,6 +11,8 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Component;
 
+import java.util.Set;
+
 @Component
 public class ChatClientItemGenerator implements ItemGenerator {
 
@@ -15,9 +20,11 @@ public class ChatClientItemGenerator implements ItemGenerator {
 	private static final Resource USER_PROMPT = new ClassPathResource("prompts/item-generator-user.st");
 
 	private final ChatClient chat;
+	private final Validator validator;
 
-	public ChatClientItemGenerator(ChatClient.Builder builder) {
+	public ChatClientItemGenerator(ChatClient.Builder builder, Validator validator) {
 		this.chat = builder.build();
+		this.validator = validator;
 	}
 
 	@Override
@@ -34,6 +41,11 @@ public class ChatClientItemGenerator implements ItemGenerator {
 		}
 		if (item == null) {
 			throw new ItemGenerationException("AI returned no item for %s + %s".formatted(nameA, nameB));
+		}
+		Set<ConstraintViolation<GeneratedItem>> violations = validator.validate(item);
+		if (!violations.isEmpty()) {
+			throw new ItemGenerationException("AI returned an invalid item for %s + %s".formatted(nameA, nameB),
+					new ConstraintViolationException(violations));
 		}
 		return item;
 	}
