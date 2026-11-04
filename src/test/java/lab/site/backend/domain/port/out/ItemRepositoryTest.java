@@ -13,6 +13,7 @@ import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.assertThatCode;
 
 @DataJpaTest
 class ItemRepositoryTest {
@@ -47,6 +48,45 @@ class ItemRepositoryTest {
 		assertThat(items.findById(fire.getId()).orElseThrow().getTags())
 				.extracting(Tag::getName)
 				.containsExactly("hot");
+	}
+
+	@Test
+	void validItemAndTagAreSaved() {
+		Tag tag = tags.save(new Tag("valid"));
+
+		assertThatCode(() -> items.saveAndFlush(new Item("valid item", "emoji", Set.of(tag))))
+				.doesNotThrowAnyException();
+		assertThat(tag.getId()).isNotNull();
+	}
+
+	@Test
+	void blankItemNameIsRejectedBeforeInsert() {
+		assertThatThrownBy(() -> items.saveAndFlush(new Item(" ", "🔥", Set.of())))
+				.isInstanceOf(jakarta.validation.ConstraintViolationException.class);
+	}
+
+	@Test
+	void overlongItemNameIsRejectedBeforeInsert() {
+		assertThatThrownBy(() -> items.saveAndFlush(new Item("a".repeat(51), "🔥", Set.of())))
+				.isInstanceOf(jakarta.validation.ConstraintViolationException.class);
+	}
+
+	@Test
+	void blankTagNameIsRejectedBeforeInsert() {
+		assertThatThrownBy(() -> tags.saveAndFlush(new Tag(" ")))
+				.isInstanceOf(jakarta.validation.ConstraintViolationException.class);
+	}
+
+	@Test
+	void overlongTagNameIsRejectedBeforeInsert() {
+		assertThatThrownBy(() -> tags.saveAndFlush(new Tag("a".repeat(31))))
+				.isInstanceOf(jakarta.validation.ConstraintViolationException.class);
+	}
+
+	@Test
+	void itemWithTooLongEmojiIsRejectedBeforeInsert() {
+		assertThatThrownBy(() -> items.saveAndFlush(new Item("valid", "12345678901234567", Set.of())))
+				.isInstanceOf(jakarta.validation.ConstraintViolationException.class);
 	}
 
 	@Test
