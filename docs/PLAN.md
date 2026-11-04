@@ -20,8 +20,8 @@ Validation with Bean Validation; tests mock `ItemGenerator` with Mockito.
 - [x] #20 feat: `ItemGenerator` port and Spring AI generator (returns name, tags and emoji; fantasy and sci-fi items allowed)
 - [x] #21 feat: `CombineService` returns a known recipe (A+B = B+A, an item can combine with itself)
 - [ ] #22 feat: reject items that aren't in the collection
-- [ ] #23 feat: an unknown pair generates a new item and saves the recipe
-- [ ] #24 feat: validate the AI result (name and at least one tag), retry once, then return an error
+- [x] #23 feat: an unknown pair generates a new item and saves the recipe
+- [x] #24 feat: validate the AI result (name and at least one tag), retry once, then return an error
 - [ ] #25 feat: reuse an existing item when the names match, ignoring case
 - [ ] #26 feat: `POST /combine {a, b}` (errors as `ProblemDetail`)
 

@@ -16,7 +16,7 @@ Hexagonal architecture (ports & adapters), with the usual Java names:
 
 - Dependency rule: `adapter → application → domain`.
 - Interfaces only at the boundaries (ports), not for every class.
-- JPA entities live in `domain`, annotations included (pragmatic choice).
+- JPA entities live in `domain`, annotations included (pragmatic choice). Bean Validation annotations in `domain` (records and entities) are allowed for the same reason.
 - Not enforced by tooling; the rule is written in `AGENTS.md`.
 
 Details: [ARCHITECTURE.md](../ARCHITECTURE.md).

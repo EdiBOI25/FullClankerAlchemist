@@ -19,13 +19,13 @@
 # Non-functional features
 
 - [ ] Allow for "unreal" items - fantasy, sci-fi etc.
-- [ ] AI is called only for new pairs; known pairs come from the DB, whoever tried them first
+- [x] AI is called only for new pairs; known pairs come from the DB, whoever tried them first
 - [ ] No duplicate items (case-insensitive names); AI reuses similar existing items
 - [ ] If the AI service is down, known pairs still merge; if Chroma is down, merging works without similar items
 - [ ] If the icon service is down, the merge still works (emoji fallback)
 - [x] API keys come from environment variables, never committed
-- [ ] Data survives app restarts
-- [ ] AI result is validated before saving (name + at least one tag); invalid -> retry once, then error
+- [x] Data survives app restarts
+- [x] AI result is validated before saving (name, emoji, tags); invalid or failed -> retry once, then error
 - [ ] Vector store can be rebuilt from the DB if it is lost
 - [ ] Every input is validated where it enters a service: REST requests, AI results, calls between services, entities
 - [ ] Every behaviour is tested, failure paths included; AI generation and chat are tested with a mocked model, live, and judged by an AI evaluator
