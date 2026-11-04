@@ -11,6 +11,7 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Component;
 
+import java.util.Locale;
 import java.util.Set;
 
 @Component
@@ -56,12 +57,21 @@ public class ChatClientItemGenerator implements ItemGenerator {
 		if (item == null) {
 			throw new ItemGenerationException("AI returned no item for %s + %s".formatted(nameA, nameB));
 		}
-		Set<ConstraintViolation<GeneratedItem>> violations = validator.validate(item);
+		GeneratedItem normalized = normalize(item);
+		Set<ConstraintViolation<GeneratedItem>> violations = validator.validate(normalized);
 		if (!violations.isEmpty()) {
 			throw new ItemGenerationException("AI returned an invalid item for %s + %s".formatted(nameA, nameB),
 					new ConstraintViolationException(violations));
 		}
-		return item;
+		return normalized;
+	}
+
+	private GeneratedItem normalize(GeneratedItem item) {
+		String name = item.name() == null ? null : item.name().trim();
+		var tags = item.tags() == null ? null : item.tags().stream()
+				.map(tag -> tag == null ? null : tag.trim().toLowerCase(Locale.ROOT))
+				.toList();
+		return new GeneratedItem(name, item.emoji(), tags);
 	}
 
 }
