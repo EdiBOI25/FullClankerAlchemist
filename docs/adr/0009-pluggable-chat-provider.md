@@ -18,5 +18,5 @@ Combining needs an LLM. Gemini's API has a free tier, so every teammate can run 
 - Running the app needs a key, even for read-only endpoints.
 - A new provider needs its starter, an `AiProviderCheck` entry, its key and model lines in `application.properties`, a timeout (a starter property, or a client in `config` if the starter has none), and its key in `.env.example`.
 - Vertex AI (project and location instead of a key) is not supported.
-- Gemini's timeout covers the whole call, SDK retries included (plus up to ~30 s backoff); Anthropic's applies per attempt (2 retries, so up to ~3 min).
+- Gemini's timeout covers the whole call, SDK retries included (plus up to ~30 s backoff); Anthropic's applies per attempt (2 retries, so up to ~3 min). `ChatClientItemGenerator` retries once more on a failure or an invalid result, so the worst case doubles.
 - Embeddings are independent of the chat provider; the model is chosen in the RAG phase ([ADR-0006](0006-vectorstore-local-embeddings.md) was rejected).

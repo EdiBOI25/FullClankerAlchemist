@@ -38,6 +38,7 @@ alchemist-service/            hexagonal
     │   ├── model/            Item, Tag, Recipe, User (JPA entities)
     │   ├── dto/              ItemDto, RecipeDto, CombineRequest, CombineResult, GeneratedItem,
     │   │                     SignupRequest, ChatRequest (records)
+    │   ├── exception/        ItemGenerationException, ItemNotFoundException
     │   └── port/
     │       ├── in/           CombineItems, FindItems, FindRecipes, RegisterUser
     │       └── out/          ItemRepository, TagRepository, RecipeRepository, UserRepository,
@@ -71,7 +72,7 @@ mcp-server/
 
 | Layer | Package | Contains | May depend on |
 |---|---|---|---|
-| Domain | `domain` | entities (`model`), DTO records (`dto`), ports (`port.in`, `port.out`) | nothing |
+| Domain | `domain` | entities (`model`), DTO records (`dto`), exceptions (`exception`), ports (`port.in`, `port.out`) | nothing |
 | Application | `application` | services implementing `port.in` | `domain` |
 | Adapters | `adapter.in`, `adapter.out` | REST, chat / ai-service, Chroma, Iconify | `application`, `domain` |
 | Config | `config` | wiring, security | everything |
@@ -126,7 +127,7 @@ CombineController (adapter.in)
       3. RecipeRepository: pair known? → go to 7
       4. ItemSearch: find similar existing items       port.out → chroma
       5. ItemGenerator: ask for the result             port.out → ai-service → AI provider
-         (ai-service validates: name + at least one tag, retries once;
+         (ai-service validates name, emoji and tags with Bean Validation and retries once on a failure or an invalid result;
           alchemist-service validates the reply again)
       6. reuse the item if the name exists, else save it (discovered_by, icon via IconProvider);
          save the recipe (discovered_by)
