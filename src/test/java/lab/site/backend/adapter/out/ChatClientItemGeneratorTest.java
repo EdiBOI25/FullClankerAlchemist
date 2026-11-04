@@ -11,6 +11,7 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
+import org.mockito.stubbing.OngoingStubbing;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.model.ChatModel;
@@ -27,6 +28,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -106,6 +108,42 @@ class ChatClientItemGeneratorTest {
 		assertThat(item.tags()).hasSize(5);
 	}
 
+	@Test
+	void invalidResultIsRetriedOnce() {
+		reply(item(" ", "💨", quoted("gas")), item("Steam", "💨", quoted("gas")));
+
+		GeneratedItem item = generator.generate("fire", "water");
+
+		assertThat(item.name()).isEqualTo("Steam");
+		verify(model, times(2)).call(any(Prompt.class));
+	}
+
+	@Test
+	void providerFailureIsRetriedOnce() {
+		when(model.getOptions()).thenReturn(ChatOptions.builder().build());
+		when(model.call(any(Prompt.class)))
+				.thenThrow(new RuntimeException("503 from provider"))
+				.thenReturn(response(item("Steam", "💨", quoted("gas"))));
+
+		GeneratedItem item = generator.generate("fire", "water");
+
+		assertThat(item.name()).isEqualTo("Steam");
+		verify(model, times(2)).call(any(Prompt.class));
+	}
+
+	@Test
+	void secondFailureIsThrownWithTheFirstAttached() {
+		reply(item(" ", "💨", quoted("gas")), "not json");
+
+		assertThatThrownBy(() -> generator.generate("fire", "water"))
+				.isInstanceOf(ItemGenerationException.class)
+				.hasMessageContaining("AI call failed")
+				.satisfies(second -> assertThat(second.getSuppressed())
+						.singleElement()
+						.satisfies(first -> assertThat(first).hasMessageContaining("invalid item")));
+		verify(model, times(2)).call(any(Prompt.class));
+	}
+
 	static Stream<Arguments> invalidItems() {
 		return Stream.of(
 				Arguments.of("blank name", item(" ", "💨", quoted("gas")), "name"),
@@ -131,10 +169,16 @@ class ChatClientItemGeneratorTest {
 		return Stream.of(tags).map(tag -> "\"" + tag + "\"").collect(Collectors.joining(", "));
 	}
 
-	private void reply(String json) {
+	private void reply(String... jsons) {
 		when(model.getOptions()).thenReturn(ChatOptions.builder().build());
-		when(model.call(any(Prompt.class)))
-				.thenReturn(new ChatResponse(List.of(new Generation(new AssistantMessage(json)))));
+		OngoingStubbing<ChatResponse> call = when(model.call(any(Prompt.class)));
+		for (String json : jsons) {
+			call = call.thenReturn(response(json));
+		}
+	}
+
+	private static ChatResponse response(String json) {
+		return new ChatResponse(List.of(new Generation(new AssistantMessage(json))));
 	}
 
 }

@@ -29,6 +29,20 @@ public class ChatClientItemGenerator implements ItemGenerator {
 
 	@Override
 	public GeneratedItem generate(String nameA, String nameB) {
+		try {
+			return attempt(nameA, nameB);
+		} catch (ItemGenerationException first) {
+			// Shortcut: no log when the first attempt fails and is retried; add a warning with the Phase 4 logging setup
+			try {
+				return attempt(nameA, nameB);
+			} catch (ItemGenerationException second) {
+				second.addSuppressed(first);
+				throw second;
+			}
+		}
+	}
+
+	private GeneratedItem attempt(String nameA, String nameB) {
 		GeneratedItem item;
 		try {
 			item = chat.prompt()
