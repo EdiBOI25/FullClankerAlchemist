@@ -3,6 +3,7 @@ package lab.site.backend.application;
 import jakarta.persistence.EntityManager;
 import lab.site.backend.domain.dto.CombineResult;
 import lab.site.backend.domain.dto.GeneratedItem;
+import lab.site.backend.domain.exception.ItemNotFoundException;
 import lab.site.backend.domain.model.Item;
 import lab.site.backend.domain.model.Recipe;
 import lab.site.backend.domain.model.Tag;
@@ -51,6 +52,36 @@ class CombineServiceTest {
 
 	@MockitoBean
 	private ItemGenerator generator;
+
+	@Test
+	void unknownFirstItemIsRejected() {
+		assertThatThrownBy(() -> combine.combine("unknown", "fire"))
+				.isInstanceOf(ItemNotFoundException.class)
+				.hasMessage("Unknown item: unknown");
+		verifyNoInteractions(generator);
+	}
+
+	@Test
+	void unknownSecondItemIsRejected() {
+		assertThatThrownBy(() -> combine.combine("fire", "unknown"))
+				.isInstanceOf(ItemNotFoundException.class)
+				.hasMessage("Unknown item: unknown");
+		verifyNoInteractions(generator);
+	}
+
+	@Test
+	void knownItemNamesIgnoreCase() {
+		Item fire = items.findByNameIgnoreCase("fire").orElseThrow();
+		Item water = items.findByNameIgnoreCase("water").orElseThrow();
+		Item steam = items.saveAndFlush(new Item("steam", "🌫️", Set.of()));
+		recipes.saveAndFlush(new Recipe(fire, water, steam));
+
+		CombineResult result = combine.combine("FiRe", "WATER");
+
+		assertThat(result.item().name()).isEqualTo("steam");
+		assertThat(result.isNew()).isFalse();
+		verifyNoInteractions(generator);
+	}
 
 	@Test
 	void knownPairReturnsResultWithIsNewFalse() {
