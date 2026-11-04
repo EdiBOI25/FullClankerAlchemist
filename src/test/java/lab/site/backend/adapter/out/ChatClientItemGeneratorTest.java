@@ -144,6 +144,22 @@ class ChatClientItemGeneratorTest {
 		verify(model, times(2)).call(any(Prompt.class));
 	}
 
+	@Test
+	void invalidResultTwiceIsThrownWithBothReasons() {
+		reply(item(" ", "💨", quoted("gas")), item("Steam", " ", quoted("gas")));
+
+		assertThatThrownBy(() -> generator.generate("fire", "water"))
+				.isInstanceOf(ItemGenerationException.class)
+				.hasMessageContaining("invalid item")
+				.satisfies(second -> {
+					assertThat(second.getCause()).hasMessageContaining("emoji");
+					assertThat(second.getSuppressed())
+							.singleElement()
+							.satisfies(first -> assertThat(first.getCause()).hasMessageContaining("name"));
+				});
+		verify(model, times(2)).call(any(Prompt.class));
+	}
+
 	static Stream<Arguments> invalidItems() {
 		return Stream.of(
 				Arguments.of("blank name", item(" ", "💨", quoted("gas")), "name"),
