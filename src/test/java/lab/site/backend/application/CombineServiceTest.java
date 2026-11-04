@@ -159,7 +159,7 @@ class CombineServiceTest {
 
 	@Test
 	void existingNameFromTheAiReusesThatItem() {
-		Item steam = items.saveAndFlush(new Item("steam", "🌫️", Set.of(tags.findByName("gas").orElseThrow())));
+		Item steam = items.saveAndFlush(new Item("steam", "🌫️", Set.of()));
 		Item ice = items.saveAndFlush(new Item("ice", "🧊", Set.of()));
 		Item lava = items.saveAndFlush(new Item("lava", "🌋", Set.of()));
 		long itemCount = items.count();
@@ -182,8 +182,10 @@ class CombineServiceTest {
 		long tagCount = tags.count();
 		when(generator.generate(any(), any())).thenReturn(new GeneratedItem("Steam", "💨", List.of("vapor")));
 
-		combine.combine("fire", "water");
+		CombineResult result = combine.combine("fire", "water");
 
+		assertThat(result.item().emoji()).isEqualTo("🌫️");
+		assertThat(result.item().tags()).containsExactly("gas");
 		assertThat(savedTags("steam")).extracting(Tag::getName).containsExactly("gas");
 		assertThat(items.findByNameIgnoreCase("steam").orElseThrow().getEmoji()).isEqualTo("🌫️");
 		assertThat(tags.count()).isEqualTo(tagCount);
