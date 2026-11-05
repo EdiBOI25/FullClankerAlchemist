@@ -2,7 +2,7 @@
 
 Microservices, why: [ADR-0010](adr/0010-microservices.md). `alchemist-service` is hexagonal (ports & adapters), why: [ADR-0004](adr/0004-hexagonal-architecture.md).
 
-> Target layout. Until the microservices phase in [PLAN.md](PLAN.md), the code is one app at the repo root, package `lab.site.backend`, with the same hexagonal layers as `alchemist-service` below.
+> Target layout. So far only `alchemist-service` exists; the other services follow in later issues (see [PLAN.md](PLAN.md)).
 
 ## Services
 

@@ -5,12 +5,12 @@ Instructions for AI coding agents (Claude Code, Copilot, Junie, Codex) and human
 ## Project
 FullClankerAlchemist: combine two items, the AI invents the result. See [README.md](README.md) and [docs/FEATURES.md](docs/FEATURES.md).
 
-Stack: Java 21, Spring Boot 4.1, Spring AI 2.0 (Gemini or Anthropic), SQLite via JPA/Hibernate, Maven. Root package: `lab.site.backend`.
+Stack: Java 21, Spring Boot 4.1, Spring AI 2.0 (Gemini or Anthropic), SQLite via JPA/Hibernate, Maven (one module per service). Module `alchemist-service`, root package `fullclanker.alchemist`.
 
 ## Commands
-- Build and test: `./mvnw verify` (Windows: `mvnw.cmd verify`)
-- Run: `./mvnw spring-boot:run`
-- Secrets: copy `.env.example` to `.env` and fill it in.
+- Build and test (all modules, from the repo root): `./mvnw verify` (Windows: `mvnw.cmd verify`)
+- Run: IntelliJ's run button on `AlchemistApplication`, or `./mvnw -pl alchemist-service spring-boot:run`
+- Secrets: copy `.env.example` to `.env` at the repo root and fill it in.
 
 ## Architecture
 Hexagonal (ports & adapters). Read [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) before writing code.
