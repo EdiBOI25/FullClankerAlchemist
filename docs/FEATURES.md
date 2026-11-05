@@ -4,21 +4,21 @@
 - [ ] User can sign up, log in and log out
 - [ ] User is able to merge two items via REST and via AI chat
 - [ ] *(Optional, if website is needed)* User is able to merge two items via *drag and drop*
-- [ ] AI decides the result of the merge
-- [ ] Merging the same pair always gives the same result (A + B = B + A)
-- [ ] User can only merge items from their collection (an item can be merged with itself)
+- [x] AI decides the result of the merge
+- [x] Merging the same pair always gives the same result (A + B = B + A)
+- [x] User can only merge items from their collection (an item can be merged with itself)
 - [ ] Each user has their own collection; items and recipes are shared, so a pair is generated once for everyone
 - [ ] User sees their own items and recipes by default, and can ask for everyone's (e.g. "what did others discover with iron?")
 - [ ] Each item and recipe shows who discovered it first
 - [ ] A merge says whether the item is new for the user and whether it is a first discovery (new for everyone)
-- [ ] Each item has one or more tags and an emoji; an Iconify icon is optional
+- [x] Each item has one or more tags and an emoji; an Iconify icon is optional
 - [ ] User is able to find items via tag(s) or by meaning (e.g. "something hot" -> fire, lava), in their collection or everyone's
 - [ ] Chat remembers the conversation and answers in a chosen tone or role
 - [ ] Admin can delete a bad recipe
 
 # Non-functional features
 
-- [ ] Allow for "unreal" items - fantasy, sci-fi etc.
+- [x] Allow for "unreal" items - fantasy, sci-fi etc.
 - [x] AI is called only for new pairs; known pairs come from the DB, whoever tried them first
 - [ ] No duplicate items (case-insensitive names); AI reuses similar existing items
 - [ ] If the AI service is down, known pairs still merge; if Chroma is down, merging works without similar items
