@@ -26,7 +26,7 @@ public class Item {
 	@Size(max = 50)
 	private String name;
 
-	@Size(max = 10)
+	@Size(max = 16)
 	private String emoji;
 
 	private String iconUrl;

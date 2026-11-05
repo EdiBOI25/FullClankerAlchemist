@@ -8,6 +8,6 @@ import java.util.List;
 
 public record GeneratedItem(
 		@NotBlank @Size(max = 50) String name,
-		@NotBlank @Size(max = 10) String emoji,
+		@NotBlank @Size(max = 16) String emoji,
 		@NotEmpty @Size(max = 5) List<@NotBlank @Size(max = 30) String> tags) {
 }
