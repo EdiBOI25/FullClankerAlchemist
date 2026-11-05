@@ -33,10 +33,10 @@ class ChatClientItemGeneratorLiveTest {
 		assertThat(item.emoji()).isNotBlank();
 	}
 
-	/** True when LIVE_TESTS=true and GEMINI_API_KEY are set, in the OS environment or in ./.env. */
+	/** True when LIVE_TESTS=true and GEMINI_API_KEY are set, in the OS environment or in .env (module folder or repo root). */
 	static boolean liveTestsEnabled() throws IOException {
 		Properties dotEnv = new Properties();
-		Path file = Path.of(".env");
+		Path file = Files.exists(Path.of(".env")) ? Path.of(".env") : Path.of("../.env");
 		if (Files.exists(file)) {
 			try (Reader reader = Files.newBufferedReader(file)) {
 				dotEnv.load(reader);
