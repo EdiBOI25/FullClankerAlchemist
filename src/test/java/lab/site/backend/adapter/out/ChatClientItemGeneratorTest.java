@@ -99,12 +99,12 @@ class ChatClientItemGeneratorTest {
 	@Test
 	void itemAtTheLimitsIsAccepted() {
 		String tag = "a".repeat(30);
-		reply(item("a".repeat(50), "💨".repeat(5), quoted(tag, tag, tag, tag, tag)));
+		reply(item("a".repeat(50), "💨".repeat(8), quoted(tag, tag, tag, tag, tag)));
 
 		GeneratedItem item = generator.generate("fire", "water");
 
 		assertThat(item.name()).hasSize(50);
-		assertThat(item.emoji()).hasSize(10);
+		assertThat(item.emoji()).hasSize(16);
 		assertThat(item.tags()).hasSize(5);
 	}
 
@@ -175,7 +175,7 @@ class ChatClientItemGeneratorTest {
 				Arguments.of("blank name", item(" ", "💨", quoted("gas")), "name"),
 				Arguments.of("name over 50 chars", item("a".repeat(51), "💨", quoted("gas")), "name"),
 				Arguments.of("blank emoji", item("Steam", " ", quoted("gas")), "emoji"),
-				Arguments.of("emoji over 10 chars", item("Steam", "💨".repeat(5) + "a", quoted("gas")), "emoji"),
+				Arguments.of("emoji over 16 chars", item("Steam", "💨".repeat(8) + "a", quoted("gas")), "emoji"),
 				Arguments.of("missing tags", """
 						{"name": "Steam", "emoji": "💨"}
 						""", "tags"),

@@ -84,6 +84,12 @@ class ItemRepositoryTest {
 	}
 
 	@Test
+	void itemWithEmojiAtTheLimitIsSaved() {
+		assertThatCode(() -> items.saveAndFlush(new Item("family", "👨‍👩‍👧‍👦" + "a".repeat(5), Set.of())))
+				.doesNotThrowAnyException();
+	}
+
+	@Test
 	void itemWithTooLongEmojiIsRejectedBeforeInsert() {
 		assertThatThrownBy(() -> items.saveAndFlush(new Item("valid", "12345678901234567", Set.of())))
 				.isInstanceOf(jakarta.validation.ConstraintViolationException.class);
