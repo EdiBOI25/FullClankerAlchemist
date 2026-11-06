@@ -18,7 +18,8 @@ Five containers, started by one `compose.yaml` (project name `fullclanker-alchem
 
 - Calls go one way: `mcp-server → alchemist-service → ai-service`. `ai-service` never calls back.
 - Chat stays in `alchemist-service`. Its tools change the user's collection, so chat in `ai-service` would make the two services call each other and pass the user's login along.
-- `alchemist-service` stays hexagonal ([ADR-0004](0004-hexagonal-architecture.md)); its `ItemGenerator` port gets an HTTP adapter that calls `ai-service`. `ai-service` and `mcp-server` are small and use plain folders (`controller`, `service`, `tool`, `dto`, `config`).
+- `alchemist-service` stays hexagonal ([ADR-0004](0004-hexagonal-architecture.md)); its `ItemGenerator` port gets an HTTP adapter that calls `ai-service`. `ai-service` and `mcp-server` are small and use plain folders (`controller`, `service`, `tool`, `dto`, `config`, `exception`). Every service keeps its exceptions in an `exception` folder.
+- Everything the project runs gets a port in 2500–2509, so it doesn't clash with other services on the host it's self-hosted on; the table is in [ARCHITECTURE](../ARCHITECTURE.md#ports).
 - `mcp-server` has its own `@Tool` methods that call the REST API; chat keeps `GameTools`, which call the inbound ports. This replaces [ADR-0005](0005-shared-tools-chat-mcp.md).
 - Services share no code; `mcp-server` keeps its own copies of the JSON records it reads.
 - One Maven module per service, in a folder named like its container; the root `pom.xml` only lists the modules. Packages: `fullclanker.alchemist`, `fullclanker.ai`, `fullclanker.mcp`.
