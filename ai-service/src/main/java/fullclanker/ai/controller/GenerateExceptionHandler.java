@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @RestControllerAdvice
 public class GenerateExceptionHandler {
 
-	/** Answers with our own message only; the cause may hold the provider's error text. */
+	/** Answers 502 with our own message only. */
 	@ExceptionHandler(ItemGenerationException.class)
 	ProblemDetail handleItemGeneration(ItemGenerationException exception) {
 		return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_GATEWAY, exception.getMessage());

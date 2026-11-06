@@ -31,7 +31,7 @@ Observability and resilience: [ADR-0010](adr/0010-microservices.md).
 | Port | Service | Published by compose |
 |---|---|---|
 | 2500 | `alchemist-service` | yes |
-| 2501 | `ai-service` | no, internal (the port matters only when running it locally) |
+| 2501 | `ai-service` | no, internal (`alchemist-service` calls it on 2501) |
 | 2502 | `mcp-server` | yes |
 | 2503 | Zipkin UI | yes, mapped to its internal 9411 |
 | 2504 | Chroma | only for debugging, mapped to its internal 8000 |
