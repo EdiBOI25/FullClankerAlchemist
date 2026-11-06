@@ -5,15 +5,15 @@ Instructions for AI coding agents (Claude Code, Copilot, Junie, Codex) and human
 ## Project
 FullClankerAlchemist: combine two items, the AI invents the result. See [README.md](README.md) and [docs/FEATURES.md](docs/FEATURES.md).
 
-Stack: Java 21, Spring Boot 4.1, Spring AI 2.0 (Gemini or Anthropic), SQLite via JPA/Hibernate, Maven (one module per service). Module `alchemist-service`, root package `fullclanker.alchemist`.
+Stack: Java 21, Spring Boot 4.1, Spring AI 2.0 (Gemini or Anthropic), SQLite via JPA/Hibernate, Maven (one module per service). Modules: `alchemist-service` (package `fullclanker.alchemist`, port 2500) and `ai-service` (package `fullclanker.ai`, port 2501); ports in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#ports).
 
 ## Commands
 - Build and test (all modules, from the repo root): `./mvnw verify` (Windows: `mvnw.cmd verify`)
-- Run: IntelliJ's run button on `AlchemistApplication`, or `./mvnw -pl alchemist-service spring-boot:run`
+- Run: IntelliJ's run button on `AlchemistApplication` / `AiApplication`, or `./mvnw -pl alchemist-service spring-boot:run` (same with `ai-service`)
 - Secrets: copy `.env.example` to `.env` at the repo root and fill it in.
 
 ## Architecture
-Hexagonal (ports & adapters). Read [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) before writing code.
+`alchemist-service` is hexagonal (ports & adapters); the rules below are for it. `ai-service` uses plain folders (`controller`, `service`, `dto`, `config`, `exception`). Read [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) before writing code.
 
 - `domain`: entities, DTO records, ports (interfaces). Imports nothing from `application` or `adapter`.
 - `application`: services implementing `port.in`. No HTTP, chat or MCP types.

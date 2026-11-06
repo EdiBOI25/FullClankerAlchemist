@@ -27,7 +27,7 @@ Validation with Bean Validation; tests mock `ItemGenerator` with Mockito.
 
 ## Phase 4 – Microservices, Docker, observability, resilience
 - [x] #39 refactor: move the app into `alchemist-service/` with a root `pom.xml` (pure `git mv` first), then rename it to `fullclanker.alchemist`
-- [ ] #40 feat: `ai-service` with `POST /generate` (generator, prompts, validation and retry moved from `alchemist-service`)
+- [x] #40 feat: `ai-service` with `POST /generate` (generator, prompts, validation and retry copied from `alchemist-service`; #41 removes the originals)
 - [ ] #41 feat: `HttpItemGenerator` calls `ai-service`: timeout longer than `ai-service`'s worst case, retry only when it can't be reached; known pairs still combine when it's down, new pairs return 503
 - [ ] #45 fix: AI call outside the DB transaction; concurrent first tries of a pair or a name return the saved result
 - [ ] #42 chore: a Dockerfile per service and `compose.yaml` (DB on a volume, `ai-service` internal only)

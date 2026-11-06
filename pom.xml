@@ -9,6 +9,7 @@
 
 	<modules>
 		<module>alchemist-service</module>
+		<module>ai-service</module>
 	</modules>
 
 </project>

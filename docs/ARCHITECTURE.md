@@ -2,7 +2,7 @@
 
 Microservices, why: [ADR-0010](adr/0010-microservices.md). `alchemist-service` is hexagonal (ports & adapters), why: [ADR-0004](adr/0004-hexagonal-architecture.md).
 
-> Target layout. So far only `alchemist-service` exists; the other services follow in later issues (see [PLAN.md](PLAN.md)).
+> Target layout. So far `alchemist-service` and `ai-service` exist; the other services follow in later issues (see [PLAN.md](PLAN.md)).
 
 ## Services
 
@@ -25,6 +25,17 @@ alchemist-service, ai-service, mcp-server ──► zipkin (traces)
 ```
 
 Observability and resilience: [ADR-0010](adr/0010-microservices.md).
+
+## Ports
+
+| Port | Service | Published by compose |
+|---|---|---|
+| 2500 | `alchemist-service` | yes |
+| 2501 | `ai-service` | no, internal (`alchemist-service` calls it on 2501) |
+| 2502 | `mcp-server` | yes |
+| 2503 | Zipkin UI | yes, mapped to its internal 9411 |
+| 2504 | Chroma | only for debugging, mapped to its internal 8000 |
+| 2505–2509 | spare | |
 
 ## Folder structure
 
@@ -53,9 +64,10 @@ alchemist-service/            hexagonal
     └── AlchemistApplication
 ai-service/
 └── src/main/java/fullclanker/ai/
-    ├── controller/           GenerateController
+    ├── controller/           GenerateController, GenerateExceptionHandler
     ├── service/              ChatClientItemGenerator
     ├── dto/                  GenerateRequest, GeneratedItem
+    ├── exception/            ItemGenerationException
     ├── config/               AiProviderCheck, GeminiClientConfig
     └── AiApplication
 mcp-server/
