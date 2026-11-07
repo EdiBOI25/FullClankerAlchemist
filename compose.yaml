@@ -1,0 +1,20 @@
+name: fullclanker-alchemist
+services:
+  alchemist-service:
+    build:
+      context: .
+      dockerfile: alchemist-service/Dockerfile
+    ports:
+      - "${ALCHEMIST_PORT:-2500}:2500"
+    env_file: .env
+    volumes:
+      - ${ALCHEMIST_DATA_DIR:-./data}:/data
+    depends_on:
+      - ai-service
+    restart: unless-stopped
+  ai-service:
+    build:
+      context: .
+      dockerfile: ai-service/Dockerfile
+    env_file: .env
+    restart: unless-stopped
