@@ -1,6 +1,7 @@
 package fullclanker.alchemist.adapter.out;
 
 import fullclanker.alchemist.domain.dto.GeneratedItem;
+import fullclanker.alchemist.domain.exception.AiServiceUnavailableException;
 import fullclanker.alchemist.domain.exception.ItemGenerationException;
 import jakarta.validation.ConstraintViolationException;
 import jakarta.validation.Validation;
@@ -21,6 +22,10 @@ import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientResponseException;
 
+import java.io.IOException;
+import java.net.ConnectException;
+import java.net.UnknownHostException;
+import java.net.http.HttpConnectTimeoutException;
 import java.net.http.HttpTimeoutException;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -115,6 +120,51 @@ class HttpItemGeneratorTest {
 				.isInstanceOf(ItemGenerationException.class)
 				.hasMessage("AI call failed for fire + water")
 				.hasRootCauseInstanceOf(HttpTimeoutException.class);
+	}
+
+	@ParameterizedTest(name = "{0}")
+	@MethodSource("unreachableFailures")
+	void unreachableThenSuccessRetriesOnce(String reason, IOException failure) {
+		server.expect(requestTo("http://ai-service/generate")).andRespond(withException(failure));
+		server.expect(requestTo("http://ai-service/generate"))
+				.andRespond(withSuccess(item("Steam", "💨", quoted("gas")), MediaType.APPLICATION_JSON));
+
+		GeneratedItem item = generator.generate("fire", "water");
+
+		assertThat(item).isEqualTo(new GeneratedItem("Steam", "💨", List.of("gas")));
+	}
+
+	@ParameterizedTest(name = "{0}")
+	@MethodSource("unreachableFailures")
+	void unreachableTwiceBecomesAiServiceUnavailableExceptionAfterTwoRequests(String reason, IOException failure) {
+		server.expect(ExpectedCount.twice(), requestTo("http://ai-service/generate")).andRespond(withException(failure));
+
+		assertThatThrownBy(() -> generator.generate("fire", "water"))
+				.isInstanceOf(AiServiceUnavailableException.class)
+				.hasMessage("AI service is unavailable for fire + water, try again later")
+				.satisfies(second -> assertThat(second.getSuppressed())
+						.singleElement()
+						.isInstanceOf(AiServiceUnavailableException.class))
+				.rootCause()
+				.isSameAs(failure);
+	}
+
+	@Test
+	void unreachableThenBadGatewayBecomesItemGenerationException() {
+		server.expect(requestTo("http://ai-service/generate"))
+				.andRespond(withException(new ConnectException("Connection refused")));
+		server.expect(requestTo("http://ai-service/generate")).andRespond(withStatus(HttpStatus.BAD_GATEWAY));
+
+		assertThatThrownBy(() -> generator.generate("fire", "water"))
+				.isInstanceOf(ItemGenerationException.class)
+				.hasMessage("AI call failed for fire + water");
+	}
+
+	static Stream<Arguments> unreachableFailures() {
+		return Stream.of(
+				Arguments.of("connection refused", new ConnectException("Connection refused")),
+				Arguments.of("unknown host", new UnknownHostException("ai-service")),
+				Arguments.of("connect timeout", new HttpConnectTimeoutException("HTTP connect timed out")));
 	}
 
 	@ParameterizedTest
