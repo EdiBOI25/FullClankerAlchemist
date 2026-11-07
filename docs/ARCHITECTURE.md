@@ -49,7 +49,8 @@ alchemist-service/            hexagonal
     │   ├── model/            Item, Tag, Recipe, User (JPA entities)
     │   ├── dto/              ItemDto, RecipeDto, CombineRequest, CombineResult, GeneratedItem,
     │   │                     SignupRequest, ChatRequest (records)
-    │   ├── exception/        ItemGenerationException, ItemNotFoundException
+    │   ├── exception/        ItemGenerationException, ItemNotFoundException,
+    │   │                     AiServiceUnavailableException
     │   └── port/
     │       ├── in/           CombineItems, FindItems, FindRecipes, RegisterUser
     │       └── out/          ItemRepository, TagRepository, RecipeRepository, UserRepository,
@@ -60,7 +61,7 @@ alchemist-service/            hexagonal
     │   │                     ChatController, GameTools (chat)
     │   └── out/              HttpItemGenerator, ChromaItemSearch, IconifyIconProvider
     ├── config/               SecurityConfig, SqliteDialect, BaseItemSeeder, AdminSeeder,
-    │                         AiProviderCheck, GeminiClientConfig
+    │                         AiProviderCheck, GeminiClientConfig, AiServiceClientConfig
     └── AlchemistApplication
 ai-service/
 └── src/main/java/fullclanker/ai/
@@ -140,7 +141,7 @@ CombineController (adapter.in)
       4. ItemSearch: find similar existing items       port.out → chroma
       5. ItemGenerator: ask for the result             port.out → ai-service → AI provider
          (ai-service validates name, emoji and tags with Bean Validation and retries once on a failure or an invalid result;
-          alchemist-service validates the reply again)
+          alchemist-service validates the reply again; unreachable → retry once; other failures → 502)
       6. reuse the item if the name exists, else save it (discovered_by, icon via IconProvider);
          save the recipe (discovered_by)
       7. add the result to the user's collection,

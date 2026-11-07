@@ -9,7 +9,7 @@ Stack: Java 21, Spring Boot 4.1, Spring AI 2.0 (Gemini or Anthropic), SQLite via
 
 ## Commands
 - Build and test (all modules, from the repo root): `./mvnw verify` (Windows: `mvnw.cmd verify`)
-- Run: IntelliJ's run button on `AlchemistApplication` / `AiApplication`, or `./mvnw -pl alchemist-service spring-boot:run` (same with `ai-service`)
+- Run: IntelliJ's run button on `AlchemistApplication` / `AiApplication`, or `./mvnw -pl alchemist-service spring-boot:run` (same with `ai-service`). Combining a new pair needs `ai-service` running.
 - Secrets: copy `.env.example` to `.env` at the repo root and fill it in.
 
 ## Architecture
@@ -18,7 +18,7 @@ Stack: Java 21, Spring Boot 4.1, Spring AI 2.0 (Gemini or Anthropic), SQLite via
 - `domain`: entities, DTO records, ports (interfaces). Imports nothing from `application` or `adapter`.
 - `application`: services implementing `port.in`. No HTTP, chat or MCP types.
 - `adapter.in`: REST, chat. Calls `port.in` only.
-- `adapter.out`: implements `port.out` (AI provider, Iconify, vector store).
+- `adapter.out`: implements `port.out` (`ai-service`, Iconify, vector store).
 - `config`: wiring.
 
 **Dependency rule:** `adapter → application → domain`. Nothing enforces it automatically, so check every import you add.
