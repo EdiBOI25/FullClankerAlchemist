@@ -1,6 +1,7 @@
 package fullclanker.alchemist.adapter.in;
 
 import jakarta.validation.ConstraintViolationException;
+import fullclanker.alchemist.domain.exception.AiServiceUnavailableException;
 import fullclanker.alchemist.domain.exception.ItemGenerationException;
 import fullclanker.alchemist.domain.model.Item;
 import fullclanker.alchemist.domain.model.Recipe;
@@ -91,6 +92,23 @@ class CombineControllerTest {
 
 		response.extractingPath("$.status").isEqualTo(502);
 		verify(generator).generate("fire", "water");
+	}
+
+	@Test
+	void unavailableAiServiceReturnsServiceUnavailableProblem() {
+		when(generator.generate(any(), any())).thenThrow(new AiServiceUnavailableException(
+				"AI service is unavailable for fire + water, try again later", new RuntimeException("refused")));
+
+		var response = assertThat(mvc.post().uri("/combine")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("""
+						{"a":"fire","b":"water"}
+						"""))
+				.hasStatus(503)
+				.hasContentType(MediaType.APPLICATION_PROBLEM_JSON)
+				.bodyJson();
+
+		response.extractingPath("$.detail").isEqualTo("AI service is unavailable for fire + water, try again later");
 	}
 
 	@Test

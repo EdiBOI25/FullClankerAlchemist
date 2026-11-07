@@ -1,5 +1,6 @@
 package fullclanker.alchemist.adapter.in;
 
+import fullclanker.alchemist.domain.exception.AiServiceUnavailableException;
 import fullclanker.alchemist.domain.exception.ItemGenerationException;
 import fullclanker.alchemist.domain.exception.ItemNotFoundException;
 import jakarta.validation.ConstraintViolationException;
@@ -22,6 +23,11 @@ public class CombineExceptionHandler {
 	@ExceptionHandler(ItemGenerationException.class)
 	ProblemDetail handleItemGeneration(ItemGenerationException exception) {
 		return problem(HttpStatus.BAD_GATEWAY, exception.getMessage());
+	}
+
+	@ExceptionHandler(AiServiceUnavailableException.class)
+	ProblemDetail handleAiServiceUnavailable(AiServiceUnavailableException exception) {
+		return problem(HttpStatus.SERVICE_UNAVAILABLE, exception.getMessage());
 	}
 
 	@ExceptionHandler(MethodArgumentNotValidException.class)
