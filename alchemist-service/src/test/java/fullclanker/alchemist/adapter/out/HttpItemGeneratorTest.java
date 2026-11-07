@@ -27,6 +27,7 @@ import java.net.ConnectException;
 import java.net.UnknownHostException;
 import java.net.http.HttpConnectTimeoutException;
 import java.net.http.HttpTimeoutException;
+import java.nio.channels.UnresolvedAddressException;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -145,7 +146,8 @@ class HttpItemGeneratorTest {
 				.satisfies(second -> assertThat(second.getSuppressed())
 						.singleElement()
 						.isInstanceOf(AiServiceUnavailableException.class))
-				.rootCause()
+				.cause()
+				.cause()
 				.isSameAs(failure);
 	}
 
@@ -163,8 +165,16 @@ class HttpItemGeneratorTest {
 	static Stream<Arguments> unreachableFailures() {
 		return Stream.of(
 				Arguments.of("connection refused", new ConnectException("Connection refused")),
-				Arguments.of("unknown host", new UnknownHostException("ai-service")),
-				Arguments.of("connect timeout", new HttpConnectTimeoutException("HTTP connect timed out")));
+				Arguments.of("unknown host (JDK)", withCause(new ConnectException(), new UnresolvedAddressException())),
+				Arguments.of("unknown host (other clients)", new UnknownHostException("ai-service")),
+				Arguments.of("connect timeout (JDK)", withCause(new HttpConnectTimeoutException("HTTP connect timed out"),
+						new ConnectException("HTTP connect timed out"))),
+				Arguments.of("connect timeout without cause", new HttpConnectTimeoutException("HTTP connect timed out")));
+	}
+
+	private static IOException withCause(IOException failure, Throwable cause) {
+		failure.initCause(cause);
+		return failure;
 	}
 
 	@ParameterizedTest

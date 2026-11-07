@@ -4,6 +4,8 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.boot.http.client.ClientHttpRequestFactoryBuilder;
 import org.springframework.boot.http.client.HttpClientSettings;
 import org.springframework.boot.http.client.HttpRedirects;
@@ -39,6 +41,22 @@ class AiServiceClientConfigTest {
 		assertThat(body).isEqualTo("ok");
 	}
 
+	@ParameterizedTest
+	@ValueSource(strings = {"http://localhost:2501", "http://ai-service:2501", "https://ai.example.com", "HTTP://localhost:2501",
+			"http://127.0.0.1:2501/", "http://[::1]:2501", "http://ai-service:2501/api"})
+	void validUrlIsAccepted(String url) {
+		assertThat(clientFor(url)).isNotNull();
+	}
+
+	@ParameterizedTest
+	@ValueSource(strings = {"localhost:2501", "http://localhost:2501 ", "ftp://ai-service", "http://", "http:localhost:2501",
+			"http://my_host:2501", "http://:2501", "http://user@:2501", "/generate", ""})
+	void invalidUrlStopsStartup(String url) {
+		assertThatThrownBy(() -> clientFor(url))
+				.isInstanceOf(IllegalStateException.class)
+				.hasMessage("AI_SERVICE_URL (ai-service.url) must look like http://localhost:2501, got '" + url + "'");
+	}
+
 	@Test
 	void slowAnswerTimesOutEvenWhenTheGlobalReadTimeoutIsLonger() {
 		server.createContext("/generate", exchange -> {
@@ -65,6 +83,11 @@ class AiServiceClientConfigTest {
 		var response = client(global, Duration.ofSeconds(5)).get().uri("/generate").retrieve().toEntity(String.class);
 
 		assertThat(response.getStatusCode().value()).isEqualTo(302);
+	}
+
+	private static RestClient clientFor(String url) {
+		return new AiServiceClientConfig().aiServiceClient(RestClient.builder(), ClientHttpRequestFactoryBuilder.jdk(),
+				HttpClientSettings.defaults(), url, Duration.ofSeconds(5));
 	}
 
 	private RestClient client(HttpClientSettings globalSettings, Duration timeout) {

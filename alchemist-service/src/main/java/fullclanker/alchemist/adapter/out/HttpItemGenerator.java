@@ -73,7 +73,7 @@ public class HttpItemGenerator implements ItemGenerator {
 
 	/** True when no connection to ai-service could be made: refused, unknown host or connect timeout. */
 	private static boolean isUnreachable(Throwable failure) {
-		// Shortcut: only the JDK client's connect timeout counts as unreachable; pin ClientHttpRequestFactoryBuilder.jdk() in AiServiceClientConfig if another HTTP library lands
+		// Shortcut: only the JDK client's connect timeout counts as unreachable; set spring.http.clients.imperative.factory=jdk if another HTTP library lands
 		for (Throwable cause = failure; cause != null; cause = cause.getCause()) {
 			if (cause instanceof ConnectException || cause instanceof UnknownHostException
 					|| cause instanceof HttpConnectTimeoutException) {
