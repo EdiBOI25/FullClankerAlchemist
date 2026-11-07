@@ -64,6 +64,7 @@ alchemist-service/            hexagonal
     │                         AiProviderCheck, GeminiClientConfig, AiServiceClientConfig
     └── AlchemistApplication
 ai-service/
+├── Dockerfile, pom.xml
 └── src/main/java/fullclanker/ai/
     ├── controller/           GenerateController, GenerateExceptionHandler
     ├── service/              ChatClientItemGenerator
