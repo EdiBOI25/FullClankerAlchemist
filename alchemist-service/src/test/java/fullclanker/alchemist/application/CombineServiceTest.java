@@ -15,7 +15,6 @@ import fullclanker.alchemist.domain.port.out.TagRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.dao.DataAccessException;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -253,19 +252,35 @@ class CombineServiceTest {
 
 	@Test
 	@Transactional(propagation = Propagation.NOT_SUPPORTED)
-	void failedRecipeSaveAlsoRollsBackTheItem() {
+	void recipeSavedByAnotherCombineIsReturned() {
+		Item water = items.findByNameIgnoreCase("water").orElseThrow();
+		Item air = items.findByNameIgnoreCase("air").orElseThrow();
+		Item mist = items.saveAndFlush(new Item("Mist", "🌫️", Set.of()));
+		when(generator.generate(any(), any())).thenAnswer(call -> {
+			recipes.saveAndFlush(new Recipe(water, air, mist));
+			return new GeneratedItem("Other", "💨", List.of("gas"));
+		});
+
+		CombineResult result = combine.combine("water", "air");
+
+		assertThat(result.item().name()).isEqualTo("Mist");
+		assertThat(result.isNew()).isFalse();
+	}
+
+	@Test
+	@Transactional(propagation = Propagation.NOT_SUPPORTED)
+	void itemSavedByAnotherCombineIsReused() {
 		Item water = items.findByNameIgnoreCase("water").orElseThrow();
 		Item air = items.findByNameIgnoreCase("air").orElseThrow();
 		when(generator.generate(any(), any())).thenAnswer(call -> {
-			recipes.save(new Recipe(water, air, water));
-			return new GeneratedItem("Mist", "🌫️", List.of("gas"));
+			items.saveAndFlush(new Item("Mist", "🌫️", Set.of()));
+			return new GeneratedItem("Mist", "💨", List.of("gas"));
 		});
 
-		// Shortcut: SQLite's unique violation surfaces as JpaSystemException; map error code 19 in SqliteDialect when the race is handled (Phase 4/5)
-		assertThatThrownBy(() -> combine.combine("water", "air"))
-				.isInstanceOf(DataAccessException.class)
-				.hasMessageContaining("UNIQUE constraint failed");
-		assertThat(items.findByNameIgnoreCase("mist")).isEmpty();
+		CombineResult result = combine.combine("water", "air");
+
+		assertThat(result.item().name()).isEqualTo("Mist");
+		assertThat(result.isNew()).isFalse();
 	}
 
 	private Set<Tag> savedTags(String itemName) {
