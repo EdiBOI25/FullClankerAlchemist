@@ -19,6 +19,9 @@ import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.model.Generation;
 import org.springframework.ai.chat.prompt.ChatOptions;
 import org.springframework.ai.chat.prompt.Prompt;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -32,6 +35,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+@ExtendWith(OutputCaptureExtension.class)
 class ChatClientItemGeneratorTest {
 
 	private final ChatModel model = mock(ChatModel.class);
@@ -39,7 +43,7 @@ class ChatClientItemGeneratorTest {
 	private final ChatClientItemGenerator generator = new ChatClientItemGenerator(ChatClient.builder(model), validator);
 
 	@Test
-	void mapsTheAiResponse() {
+	void mapsTheAiResponse(CapturedOutput output) {
 		reply("""
 				{"name": "Steam", "emoji": "💨", "tags": ["gas", "hot"]}
 				""");
@@ -47,6 +51,7 @@ class ChatClientItemGeneratorTest {
 		GeneratedItem item = generator.generate("fire", "water");
 
 		assertThat(item).isEqualTo(new GeneratedItem("Steam", "💨", List.of("gas", "hot")));
+		assertThat(output).contains("INFO", "Generated item for fire + water -> Steam (duration=");
 	}
 
 	@Test
@@ -119,12 +124,13 @@ class ChatClientItemGeneratorTest {
 	}
 
 	@Test
-	void invalidResultIsRetriedOnce() {
+	void invalidResultIsRetriedOnce(CapturedOutput output) {
 		reply(item(" ", "💨", quoted("gas")), item("Steam", "💨", quoted("gas")));
 
 		GeneratedItem item = generator.generate("fire", "water");
 
 		assertThat(item.name()).isEqualTo("Steam");
+		assertThat(output).contains("WARN", "AI result generation failed for fire + water; retrying");
 		verify(model, times(2)).call(any(Prompt.class));
 	}
 

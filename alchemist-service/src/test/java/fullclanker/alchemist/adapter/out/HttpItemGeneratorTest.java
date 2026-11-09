@@ -16,11 +16,14 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.test.json.JsonCompareMode;
 import org.springframework.test.web.client.ExpectedCount;
 import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientResponseException;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.io.IOException;
 import java.net.ConnectException;
@@ -41,6 +44,7 @@ import static org.springframework.test.web.client.response.MockRestResponseCreat
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withStatus;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
+@ExtendWith(OutputCaptureExtension.class)
 class HttpItemGeneratorTest {
 
 	private final RestClient.Builder builder = RestClient.builder().baseUrl("http://ai-service");
@@ -54,7 +58,7 @@ class HttpItemGeneratorTest {
 	}
 
 	@Test
-	void sendsThePairAndMapsTheReply() {
+	void sendsThePairAndMapsTheReply(CapturedOutput output) {
 		server.expect(requestTo("http://ai-service/generate"))
 				.andExpect(method(HttpMethod.POST))
 				.andExpect(content().contentType(MediaType.APPLICATION_JSON))
@@ -66,6 +70,7 @@ class HttpItemGeneratorTest {
 		GeneratedItem item = generator.generate("fire", "water");
 
 		assertThat(item).isEqualTo(new GeneratedItem("Steam", "💨", List.of("gas", "hot")));
+		assertThat(output).contains("INFO", "Generated item for fire + water -> Steam (duration=");
 	}
 
 	@Test
@@ -125,7 +130,7 @@ class HttpItemGeneratorTest {
 
 	@ParameterizedTest(name = "{0}")
 	@MethodSource("unreachableFailures")
-	void unreachableThenSuccessRetriesOnce(String reason, IOException failure) {
+	void unreachableThenSuccessRetriesOnce(String reason, IOException failure, CapturedOutput output) {
 		server.expect(requestTo("http://ai-service/generate")).andRespond(withException(failure));
 		server.expect(requestTo("http://ai-service/generate"))
 				.andRespond(withSuccess(item("Steam", "💨", quoted("gas")), MediaType.APPLICATION_JSON));
@@ -133,6 +138,7 @@ class HttpItemGeneratorTest {
 		GeneratedItem item = generator.generate("fire", "water");
 
 		assertThat(item).isEqualTo(new GeneratedItem("Steam", "💨", List.of("gas")));
+		assertThat(output).contains("WARN", "AI service unavailable for fire + water; retrying");
 	}
 
 	@ParameterizedTest(name = "{0}")
