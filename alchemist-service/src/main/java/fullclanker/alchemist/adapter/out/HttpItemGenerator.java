@@ -11,14 +11,19 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.net.ConnectException;
 import java.net.UnknownHostException;
 import java.net.http.HttpConnectTimeoutException;
+import java.time.Duration;
 import java.util.Set;
 
 @Component
 public class HttpItemGenerator implements ItemGenerator {
+
+	private static final Logger log = LoggerFactory.getLogger(HttpItemGenerator.class);
 
 	private final RestClient aiService;
 	private final Validator validator;
@@ -31,11 +36,12 @@ public class HttpItemGenerator implements ItemGenerator {
 	/** Asks ai-service for the item, retrying once when it can't be reached, and validates the reply again. */
 	@Override
 	public GeneratedItem generate(String nameA, String nameB) {
+		long started = System.nanoTime();
 		GeneratedItem item;
 		try {
 			item = call(nameA, nameB);
 		} catch (AiServiceUnavailableException first) {
-			// Shortcut: no log when ai-service is unreachable and the call is retried; add a warning with the #44 logging setup
+			log.warn("AI service unavailable for {} + {}; retrying", nameA, nameB, first);
 			try {
 				item = call(nameA, nameB);
 			} catch (AiServiceUnavailableException second) {
@@ -51,6 +57,8 @@ public class HttpItemGenerator implements ItemGenerator {
 			throw new ItemGenerationException("AI returned an invalid item for %s + %s".formatted(nameA, nameB),
 					new ConstraintViolationException(violations));
 		}
+		log.info("Generated item for {} + {} -> {} (duration={} ms)", nameA, nameB, item.name(),
+				Duration.ofNanos(System.nanoTime() - started).toMillis());
 		return item;
 	}
 

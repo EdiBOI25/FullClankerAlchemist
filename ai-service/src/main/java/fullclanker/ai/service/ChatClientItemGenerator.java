@@ -8,13 +8,18 @@ import fullclanker.ai.exception.ItemGenerationException;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.Locale;
 import java.util.Set;
+import java.time.Duration;
 
 @Service
 public class ChatClientItemGenerator {
+
+	private static final Logger log = LoggerFactory.getLogger(ChatClientItemGenerator.class);
 
 	private static final Resource SYSTEM_PROMPT = new ClassPathResource("prompts/item-generator-system.st");
 	private static final Resource USER_PROMPT = new ClassPathResource("prompts/item-generator-user.st");
@@ -28,17 +33,22 @@ public class ChatClientItemGenerator {
 	}
 
 	public GeneratedItem generate(String nameA, String nameB) {
+		long started = System.nanoTime();
+		GeneratedItem generated;
 		try {
-			return attempt(nameA, nameB);
+			generated = attempt(nameA, nameB);
 		} catch (ItemGenerationException first) {
-			// Shortcut: no log when the first attempt fails and is retried; add a warning with the Phase 4 logging setup
+			log.warn("AI result generation failed for {} + {}; retrying", nameA, nameB, first);
 			try {
-				return attempt(nameA, nameB);
+				generated = attempt(nameA, nameB);
 			} catch (ItemGenerationException second) {
 				second.addSuppressed(first);
 				throw second;
 			}
 		}
+		log.info("Generated item for {} + {} -> {} (duration={} ms)", nameA, nameB, generated.name(),
+				Duration.ofNanos(System.nanoTime() - started).toMillis());
+		return generated;
 	}
 
 	private GeneratedItem attempt(String nameA, String nameB) {
