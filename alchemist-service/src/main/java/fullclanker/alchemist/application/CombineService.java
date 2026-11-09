@@ -13,7 +13,7 @@ import fullclanker.alchemist.domain.port.out.ItemRepository;
 import fullclanker.alchemist.domain.port.out.RecipeRepository;
 import fullclanker.alchemist.domain.port.out.TagRepository;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.Locale;
 import java.util.Optional;
@@ -27,17 +27,18 @@ public class CombineService implements CombineItems {
 	private final TagRepository tags;
 	private final RecipeRepository recipes;
 	private final ItemGenerator generator;
+	private final TransactionTemplate transactions;
 
-	public CombineService(ItemRepository items, TagRepository tags, RecipeRepository recipes, ItemGenerator generator) {
+	public CombineService(ItemRepository items, TagRepository tags, RecipeRepository recipes, ItemGenerator generator,
+			TransactionTemplate transactions) {
 		this.items = items;
 		this.tags = tags;
 		this.recipes = recipes;
 		this.generator = generator;
+		this.transactions = transactions;
 	}
 
-	// Shortcut: the AI call runs inside the DB transaction, so concurrent combines can fail with SQLITE_BUSY; move it out and handle the unique-pair race (ADR-0011) and the item-name race in Phase 4/5
 	@Override
-	@Transactional
 	public CombineResult combine(String nameA, String nameB) {
 		Item itemA = findItem(nameA);
 		Item itemB = findItem(nameB);
@@ -60,19 +61,42 @@ public class CombineService implements CombineItems {
 
 	private CombineResult generate(Item left, Item right) {
 		GeneratedItem generated = generator.generate(left.getName(), right.getName());
-		String name = generated.name().trim();
-		// Shortcut: SQLite folds only ASCII case, so "Éclair" and "éclair" become two items; fix both the lookup and the column if accented names matter
-		Optional<Item> existing = items.findByNameIgnoreCase(name);
-		Item result = existing.orElseGet(() -> create(name, generated));
-		recipes.save(new Recipe(left, right, result));
-		return new CombineResult(ItemDto.from(result), existing.isEmpty());
+		return saveGenerated(left, right, generated, true);
+	}
+
+	private CombineResult saveGenerated(Item left, Item right, GeneratedItem generated, boolean retry) {
+		try {
+			return transactions.execute(status -> {
+				Optional<Recipe> existingRecipe = recipes.findByItemA_IdAndItemB_Id(left.getId(), right.getId());
+				if (existingRecipe.isPresent()) {
+					return new CombineResult(ItemDto.from(existingRecipe.get().getResult()), false);
+				}
+
+				String name = generated.name().trim();
+				Optional<Item> existingItem = items.findByNameIgnoreCase(name);
+				Item result = existingItem.orElseGet(() -> create(name, generated));
+				recipes.saveAndFlush(new Recipe(left, right, result));
+				return new CombineResult(ItemDto.from(result), existingItem.isEmpty());
+			});
+		} catch (org.springframework.dao.DataIntegrityViolationException exception) {
+			if (retry) {
+				return saveGenerated(left, right, generated, false);
+			}
+			return readSavedRecipe(left, right);
+		}
+	}
+
+	private CombineResult readSavedRecipe(Item left, Item right) {
+		return transactions.execute(status -> recipes.findByItemA_IdAndItemB_Id(left.getId(), right.getId())
+				.map(recipe -> new CombineResult(ItemDto.from(recipe.getResult()), false))
+				.orElseThrow(() -> new IllegalStateException("Concurrent combine did not save a recipe")));
 	}
 
 	private Item create(String name, GeneratedItem generated) {
 		Set<Tag> itemTags = generated.tags().stream()
 				.map(this::findOrCreateTag)
 				.collect(Collectors.toSet());
-		return items.save(new Item(name, generated.emoji(), itemTags));
+		return items.saveAndFlush(new Item(name, generated.emoji(), itemTags));
 	}
 
 	// Shortcut: duplicates BaseItemSeeder's tag find-or-create; extract a shared helper only if a third caller needs it
