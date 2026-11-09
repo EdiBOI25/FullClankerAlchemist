@@ -32,7 +32,7 @@ Validation with Bean Validation; tests mock `ItemGenerator` with Mockito.
 - [ ] #45 fix: AI call outside the DB transaction; concurrent first tries of a pair or a name return the saved result
 - [x] #42 chore: a Dockerfile per service and `compose.yaml` (DB on a volume, `ai-service` internal only)
 - [x] #43 feat: Actuator health and metrics in every service, used by compose healthchecks
-- [ ] #44 feat: tracing and app logs across services (trace id in the logs), Zipkin in compose
+- [x] #44 feat: tracing and app logs across services (trace id in the logs), Zipkin in compose
 - [ ] #46 docs: AGENTS.md, README and ARCHITECTURE for the new layout and `docker compose up`
 
 ## Phase 5 – Accounts and per-user collections
