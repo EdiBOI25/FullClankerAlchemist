@@ -1,6 +1,6 @@
 # 11. Accounts and per-user collections
 
-**Status:** Accepted (supersedes [ADR-0002](0002-single-player.md))
+**Status:** Accepted (supersedes [ADR-0002](0002-single-player.md)); its race note is amended by [ADR-0012](0012-sqlite-immediate-transactions.md)
 
 ## Context
 The teacher requires Spring Security with authentication and authorization (mark 9). [ADR-0002](0002-single-player.md) had one player and no accounts. With several players each needs their own collection, but generating the same pair again for every player would waste AI calls ([ADR-0003](0003-generate-combinations-once.md)).
