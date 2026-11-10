@@ -68,6 +68,7 @@ public class CombineService implements CombineItems {
 			}
 
 			String name = generated.name().trim();
+			// Shortcut: SQLite folds only ASCII case, so "Éclair" and "éclair" become two items; fix both the lookup and the column if accented names matter
 			Optional<Item> existingItem = items.findByNameIgnoreCase(name);
 			Item result = existingItem.orElseGet(() -> create(name, generated));
 			recipes.save(new Recipe(left, right, result));
