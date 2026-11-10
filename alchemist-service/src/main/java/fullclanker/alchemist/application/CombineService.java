@@ -61,42 +61,25 @@ public class CombineService implements CombineItems {
 
 	private CombineResult generate(Item left, Item right) {
 		GeneratedItem generated = generator.generate(left.getName(), right.getName());
-		return saveGenerated(left, right, generated, true);
-	}
-
-	private CombineResult saveGenerated(Item left, Item right, GeneratedItem generated, boolean retry) {
-		try {
-			return transactions.execute(status -> {
-				Optional<Recipe> existingRecipe = recipes.findByItemA_IdAndItemB_Id(left.getId(), right.getId());
-				if (existingRecipe.isPresent()) {
-					return new CombineResult(ItemDto.from(existingRecipe.get().getResult()), false);
-				}
-
-				String name = generated.name().trim();
-				Optional<Item> existingItem = items.findByNameIgnoreCase(name);
-				Item result = existingItem.orElseGet(() -> create(name, generated));
-				recipes.saveAndFlush(new Recipe(left, right, result));
-				return new CombineResult(ItemDto.from(result), existingItem.isEmpty());
-			});
-		} catch (org.springframework.dao.DataIntegrityViolationException exception) {
-			if (retry) {
-				return saveGenerated(left, right, generated, false);
+		return transactions.execute(status -> {
+			Optional<Recipe> existingRecipe = recipes.findByItemA_IdAndItemB_Id(left.getId(), right.getId());
+			if (existingRecipe.isPresent()) {
+				return new CombineResult(ItemDto.from(existingRecipe.get().getResult()), false);
 			}
-			return readSavedRecipe(left, right);
-		}
-	}
 
-	private CombineResult readSavedRecipe(Item left, Item right) {
-		return transactions.execute(status -> recipes.findByItemA_IdAndItemB_Id(left.getId(), right.getId())
-				.map(recipe -> new CombineResult(ItemDto.from(recipe.getResult()), false))
-				.orElseThrow(() -> new IllegalStateException("Concurrent combine did not save a recipe")));
+			String name = generated.name().trim();
+			Optional<Item> existingItem = items.findByNameIgnoreCase(name);
+			Item result = existingItem.orElseGet(() -> create(name, generated));
+			recipes.save(new Recipe(left, right, result));
+			return new CombineResult(ItemDto.from(result), existingItem.isEmpty());
+		});
 	}
 
 	private Item create(String name, GeneratedItem generated) {
 		Set<Tag> itemTags = generated.tags().stream()
 				.map(this::findOrCreateTag)
 				.collect(Collectors.toSet());
-		return items.saveAndFlush(new Item(name, generated.emoji(), itemTags));
+		return items.save(new Item(name, generated.emoji(), itemTags));
 	}
 
 	// Shortcut: duplicates BaseItemSeeder's tag find-or-create; extract a shared helper only if a third caller needs it
