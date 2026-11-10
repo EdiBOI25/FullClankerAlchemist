@@ -33,7 +33,7 @@ Validation with Bean Validation; tests mock `ItemGenerator` with Mockito.
 - [x] #42 chore: a Dockerfile per service and `compose.yaml` (DB on a volume, `ai-service` internal only)
 - [x] #43 feat: Actuator health and metrics in every service, used by compose healthchecks
 - [x] #44 feat: tracing and app logs across services (trace id in the logs), Zipkin in compose
-- [ ] #46 docs: AGENTS.md, README and ARCHITECTURE for the new layout and `docker compose up`
+- [x] #46 docs: AGENTS.md, README and ARCHITECTURE for the new layout and `docker compose up`
 
 ## Phase 5 – Accounts and per-user collections
 - [ ] feat: `User` entity with roles (`USER`, `ADMIN`), admin account from `.env`

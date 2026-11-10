@@ -36,8 +36,7 @@ Proxy Host: your domain, scheme `http`, forward host = the server's LAN IP (not 
 Containers restart on their own after a crash or reboot (`restart: unless-stopped`).
 
 ## Observability
-- Logs: `docker compose logs -f` (all services) or `docker compose logs -f ai-service`. Each line shows `[service] [thread] [traceId-spanId]` (blank outside a request).
-- Traces: Zipkin UI at `http://<server>:2503`. Paste a `traceId` from the logs (the part before the `-`) into the search box to see one request across both services.
+- Logs and traces: [LOGS.md](LOGS.md). The Zipkin UI is at `http://<server>:2503`.
 - Health: `docker compose ps` shows `healthy`/`unhealthy`. Metrics: `http://<server>:<ALCHEMIST_PORT>/actuator/metrics` (default port 2500). `ai-service` is internal only, so reach its actuator through `docker compose exec`.
 
 ## Access

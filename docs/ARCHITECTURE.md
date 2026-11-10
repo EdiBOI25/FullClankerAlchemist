@@ -2,7 +2,7 @@
 
 Microservices, why: [ADR-0010](adr/0010-microservices.md). `alchemist-service` is hexagonal (ports & adapters), why: [ADR-0004](adr/0004-hexagonal-architecture.md).
 
-> Target layout. So far `alchemist-service` and `ai-service` exist; the other services follow in later issues (see [PLAN.md](PLAN.md)).
+> Target design: services and classes for later phases ([PLAN.md](PLAN.md)) are listed here before they exist.
 
 ## Services
 

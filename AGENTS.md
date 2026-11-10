@@ -10,6 +10,7 @@ Stack: Java 21, Spring Boot 4.1, Spring AI 2.0 (Gemini or Anthropic), SQLite via
 ## Commands
 - Build and test (all modules, from the repo root): `./mvnw verify` (Windows: `mvnw.cmd verify`)
 - Run: IntelliJ's run button on `AlchemistApplication` / `AiApplication`, or `./mvnw -pl alchemist-service spring-boot:run` (same with `ai-service`). Combining a new pair needs `ai-service` running.
+- Run everything in Docker (both services and Zipkin): `docker compose up -d --build`. Logs: [docs/LOGS.md](docs/LOGS.md).
 - Secrets: copy `.env.example` to `.env` at the repo root and fill it in.
 
 ## Architecture
