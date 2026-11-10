@@ -28,6 +28,5 @@ curl -X POST localhost:2500/combine -H "Content-Type: application/json" -d '{"a"
 - On a server: [docs/SELF-HOSTING.md](docs/SELF-HOSTING.md)
 - Developing (build, tests, running from the IDE): [AGENTS.md](AGENTS.md) and [CONTRIBUTING.md](CONTRIBUTING.md)
 
-
 ---
 *This is a collaborative college project.*
