@@ -9,10 +9,10 @@ import org.hibernate.mapping.Column;
 import org.hibernate.mapping.Table;
 import org.hibernate.mapping.UniqueKey;
 
+// Shortcut: SQLite's UNIQUE violations surface as JpaSystemException, not DataIntegrityViolationException; map error code 19 here (falling back to super) when a caller must tell duplicates apart, e.g. signup in Phase 5
 /** SQLite dialect that writes multi-column unique constraints into CREATE TABLE. */
 public class SqliteDialect extends SQLiteDialect {
 
-	// Shortcut: SQLite's UNIQUE violations surface as JpaSystemException, not DataIntegrityViolationException; map error code 19 here (falling back to super) when a caller must tell duplicates apart, e.g. signup in Phase 5
 	private final UniqueDelegate uniqueDelegate = new AlterTableUniqueDelegate(this) {
 
 		@Override
