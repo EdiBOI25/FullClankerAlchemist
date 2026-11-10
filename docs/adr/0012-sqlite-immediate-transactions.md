@@ -13,7 +13,7 @@ Two concurrent first combines of the same pair, or of two pairs that produce the
 ## Consequences
 - No `SQLITE_BUSY` on concurrent combines, and no retry code.
 - Every transaction, read-only ones included (Spring Data's `findAll`, `findById`), takes the write lock, so they queue behind writes. Reads outside a transaction (derived queries) don't wait. Fine at this app's load.
-- A lock wait over 3 s returns a 500 (`CannotAcquireLockException`).
+- A lock wait over 3 s returns a 500.
 - Not chosen for now:
   - WAL: measured, no gain while every transaction is `IMMEDIATE`; it adds `-wal`/`-shm` files to back up.
   - `jdbc.explicit_readonly`: would keep read-only transactions deferred, but breaks with a connection pool (sqlite-jdbc rejects the write upgrade once the connection has run any statement).
