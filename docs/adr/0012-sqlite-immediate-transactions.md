@@ -1,6 +1,6 @@
 # 12. SQLite transactions start with BEGIN IMMEDIATE
 
-**Status:** Accepted
+**Status:** Accepted (amends the race note in [ADR-0011](0011-accounts-and-per-user-collections.md))
 
 ## Context
 Two concurrent first combines of the same pair, or of two pairs that produce the same new item, both find nothing saved and then both write. A deferred SQLite transaction starts as a reader and becomes a writer on its first write. When two readers try that at once, SQLite fails one immediately with `SQLITE_BUSY` (the busy timeout doesn't apply), so the request returned a 500. The unique-violation handling added for #45 never ran, because the race never reached a constraint.
