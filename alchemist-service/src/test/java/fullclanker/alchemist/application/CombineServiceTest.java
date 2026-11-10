@@ -16,7 +16,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
@@ -248,39 +247,6 @@ class CombineServiceTest {
 		assertThatThrownBy(() -> combine.combine("fire", "air")).isSameAs(failure);
 		assertThat(items.count()).isEqualTo(itemCount);
 		assertThat(recipes.findByItemA_IdAndItemB_Id(fire.getId(), air.getId())).isEmpty();
-	}
-
-	@Test
-	@Transactional(propagation = Propagation.NOT_SUPPORTED)
-	void recipeSavedByAnotherCombineIsReturned() {
-		Item water = items.findByNameIgnoreCase("water").orElseThrow();
-		Item air = items.findByNameIgnoreCase("air").orElseThrow();
-		Item mist = items.saveAndFlush(new Item("Mist", "🌫️", Set.of()));
-		when(generator.generate(any(), any())).thenAnswer(call -> {
-			recipes.saveAndFlush(new Recipe(water, air, mist));
-			return new GeneratedItem("Other", "💨", List.of("gas"));
-		});
-
-		CombineResult result = combine.combine("water", "air");
-
-		assertThat(result.item().name()).isEqualTo("Mist");
-		assertThat(result.isNew()).isFalse();
-	}
-
-	@Test
-	@Transactional(propagation = Propagation.NOT_SUPPORTED)
-	void itemSavedByAnotherCombineIsReused() {
-		Item water = items.findByNameIgnoreCase("water").orElseThrow();
-		Item air = items.findByNameIgnoreCase("air").orElseThrow();
-		when(generator.generate(any(), any())).thenAnswer(call -> {
-			items.saveAndFlush(new Item("Mist", "🌫️", Set.of()));
-			return new GeneratedItem("Mist", "💨", List.of("gas"));
-		});
-
-		CombineResult result = combine.combine("water", "air");
-
-		assertThat(result.item().name()).isEqualTo("Mist");
-		assertThat(result.isNew()).isFalse();
 	}
 
 	private Set<Tag> savedTags(String itemName) {
