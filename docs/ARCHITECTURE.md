@@ -125,7 +125,7 @@ SQLite file owned by `alchemist-service`, see [ADR-0001](adr/0001-sqlite-databas
 - A recipe pair is stored ordered (`item_a_id ≤ item_b_id`) and is unique, so `A + B = B + A`. Combining an item with itself is allowed.
 - Several recipes can lead to the same item (`fire + water` and `lava + water` → Steam).
 - `scope=mine` recipes: both inputs and the result are in the user's collection.
-- Every transaction starts with `BEGIN IMMEDIATE`, so concurrent writers queue instead of failing with `SQLITE_BUSY` ([ADR-0012](adr/0012-sqlite-immediate-transactions.md)).
+- Every transaction starts with `BEGIN IMMEDIATE`, so concurrent writers queue (up to 3 s) instead of failing at once with `SQLITE_BUSY` ([ADR-0012](adr/0012-sqlite-immediate-transactions.md)).
 
 **Vector store** (`chroma` container, details in the RAG phase ADR): one entry per item, text `"name: tag1, tag2"`, metadata `itemId`. Re-indexed from the DB if the collection is empty. `scope=mine` keeps only the user's items.
 
