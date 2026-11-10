@@ -3,16 +3,13 @@ package fullclanker.alchemist.config;
 import org.hibernate.boot.Metadata;
 import org.hibernate.boot.model.relational.SqlStringGenerationContext;
 import org.hibernate.community.dialect.SQLiteDialect;
-import org.hibernate.exception.ConstraintViolationException;
 import org.hibernate.dialect.unique.AlterTableUniqueDelegate;
 import org.hibernate.dialect.unique.UniqueDelegate;
-import org.hibernate.exception.spi.SQLExceptionConversionDelegate;
 import org.hibernate.mapping.Column;
 import org.hibernate.mapping.Table;
 import org.hibernate.mapping.UniqueKey;
 
-import java.sql.SQLException;
-
+// Shortcut: SQLite's UNIQUE violations surface as JpaSystemException, not DataIntegrityViolationException; map error code 19 here (falling back to super) when a caller must tell duplicates apart, e.g. signup in Phase 5
 /** SQLite dialect that writes multi-column unique constraints into CREATE TABLE. */
 public class SqliteDialect extends SQLiteDialect {
 
@@ -48,22 +45,6 @@ public class SqliteDialect extends SQLiteDialect {
 	@Override
 	public UniqueDelegate getUniqueDelegate() {
 		return uniqueDelegate;
-	}
-
-	@Override
-	public SQLExceptionConversionDelegate buildSQLExceptionConversionDelegate() {
-		return (sqlException, message, sql) -> isConstraintViolation(sqlException)
-				? new ConstraintViolationException(message, sqlException, sql)
-				: null;
-	}
-
-	private boolean isConstraintViolation(SQLException exception) {
-		for (SQLException current = exception; current != null; current = current.getNextException()) {
-			if (current.getErrorCode() == 19) {
-				return true;
-			}
-		}
-		return false;
 	}
 
 }
