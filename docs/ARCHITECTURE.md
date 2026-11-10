@@ -144,7 +144,7 @@ CombineController (adapter.in)
       5. ItemGenerator: ask for the result             port.out → ai-service → AI provider
          (ai-service validates name, emoji and tags with Bean Validation and retries once on a failure or an invalid result;
           alchemist-service validates the reply again; unreachable → retry once; other failures → 502)
-      6. in one transaction, after the AI call: pair saved meanwhile? → return it;
+      6. in one transaction, after the AI call: pair saved meanwhile? → go to 7;
          reuse the item if the name exists, else save it (discovered_by, icon via IconProvider);
          save the recipe (discovered_by)
       7. add the result to the user's collection,
