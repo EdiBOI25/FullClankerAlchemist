@@ -8,6 +8,7 @@ Two concurrent first combines of the same pair, or of two pairs that produce the
 ## Decision
 - sqlite-jdbc starts every transaction with `BEGIN IMMEDIATE` (`spring.datasource.hikari.data-source-properties.transaction_mode=IMMEDIATE`). It takes the write lock up front, so a second writer waits (sqlite-jdbc's busy timeout, 3 s) and then sees the first one's rows.
 - `CombineService` calls the AI outside the transaction, then re-checks the pair and the item name inside it.
+- `spring.jpa.open-in-view=false`, so a request holds no DB connection during the AI call.
 - `CombineServiceConcurrencyTest` runs both races against a file DB.
 
 ## Consequences
