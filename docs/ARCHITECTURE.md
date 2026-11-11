@@ -117,7 +117,7 @@ SQLite file owned by `alchemist-service`, see [ADR-0001](adr/0001-sqlite-databas
 | `tag` | id, name (unique, lowercase) |
 | `item_tag` | item_id → item, tag_id → tag |
 | `recipe` | id, item_a_id → item, item_b_id → item, result_id → item, discovered_by → user |
-| `user` | id, username (unique), password (bcrypt), role |
+| `user` | id, username (unique, case-insensitive), password (bcrypt), role |
 | `user_item` | user_id → user, item_id → item |
 
 - Only the 4 base items are seeded (fire, water, earth, air); every new user gets them. Every other item is created when first discovered.
