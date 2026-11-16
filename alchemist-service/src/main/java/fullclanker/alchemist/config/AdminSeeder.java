@@ -44,7 +44,7 @@ public class AdminSeeder implements CommandLineRunner {
 	@Override
 	public void run(String... args) {
 		if (username.isEmpty() && password.isEmpty()) {
-			log.info("ADMIN_USERNAME and ADMIN_PASSWORD are empty; no admin account");
+			log.info("ADMIN_USERNAME and ADMIN_PASSWORD are empty; no admin created or updated");
 			return;
 		}
 		if (username.isEmpty() || password.isEmpty()) {
