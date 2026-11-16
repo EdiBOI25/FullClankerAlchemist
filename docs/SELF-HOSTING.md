@@ -10,7 +10,7 @@ Both services on a Linux server with Docker Compose, behind Nginx Proxy Manager,
    cd FullClankerAlchemist
    cp .env.example .env
    ```
-   In `.env`: set `AI_PROVIDER` and its API key. Optional: `ALCHEMIST_PORT` (default `2500`), `ALCHEMIST_DATA_DIR` (default `./data`; must be a path starting with `./` or `/`).
+   In `.env`: set `AI_PROVIDER` and its API key. Optional: `ALCHEMIST_PORT` (default `2500`), `ALCHEMIST_DATA_DIR` (default `./data`; must be a path starting with `./` or `/`), `ADMIN_USERNAME` and `ADMIN_PASSWORD` for the admin account (rules and effects in `.env.example`). After changing `.env`, run `docker compose up -d`; `docker compose restart` keeps the old values.
 3. Create the data folder; the app runs as user 1001 and must own it:
    ```bash
    mkdir -p data && sudo chown 1001 data

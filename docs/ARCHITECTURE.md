@@ -48,11 +48,11 @@ alchemist-service/            hexagonal
     ├── domain/
     │   ├── model/            Item, Tag, Recipe, User (JPA entities)
     │   ├── dto/              ItemDto, RecipeDto, CombineRequest, CombineResult, GeneratedItem,
-    │   │                     SignupRequest, ChatRequest (records)
+    │   │                     Credentials, ChatRequest (records), Password (constraint)
     │   ├── exception/        ItemGenerationException, ItemNotFoundException,
-    │   │                     AiServiceUnavailableException
+    │   │                     AiServiceUnavailableException, UsernameTakenException
     │   └── port/
-    │       ├── in/           CombineItems, FindItems, FindRecipes, RegisterUser
+    │       ├── in/           CombineItems, FindItems, FindRecipes, CreateUser
     │       └── out/          ItemRepository, TagRepository, RecipeRepository, UserRepository,
     │                         ItemGenerator, ItemSearch, IconProvider
     ├── application/          CombineService, ItemService, RecipeService, UserService
@@ -101,7 +101,7 @@ mcp-server/
 | `CombineItems` | in | `CombineService` |
 | `FindItems` | in | `ItemService` |
 | `FindRecipes` | in | `RecipeService` |
-| `RegisterUser` | in | `UserService` |
+| `CreateUser` | in | `UserService` |
 | `ItemRepository`, `TagRepository`, `RecipeRepository`, `UserRepository` | out | Spring Data (generated) |
 | `ItemGenerator` | out | `HttpItemGenerator` (calls `ai-service`) |
 | `ItemSearch` | out | `ChromaItemSearch` |
