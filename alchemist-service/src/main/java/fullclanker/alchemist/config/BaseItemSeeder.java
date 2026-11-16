@@ -5,12 +5,14 @@ import fullclanker.alchemist.domain.model.Tag;
 import fullclanker.alchemist.domain.port.out.ItemRepository;
 import fullclanker.alchemist.domain.port.out.TagRepository;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Set;
 
 @Component
+@Order(1)
 public class BaseItemSeeder implements CommandLineRunner {
 
 	private final ItemRepository items;

@@ -63,4 +63,8 @@ public class User {
 		return role;
 	}
 
+	public void changePassword(String hash) {
+		this.password = hash;
+	}
+
 }
