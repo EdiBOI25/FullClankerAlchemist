@@ -48,7 +48,7 @@ alchemist-service/            hexagonal
     ├── domain/
     │   ├── model/            Item, Tag, Recipe, User (JPA entities)
     │   ├── dto/              ItemDto, RecipeDto, CombineRequest, CombineResult, GeneratedItem,
-    │   │                     SignupRequest, ChatRequest (records)
+    │   │                     Credentials, ChatRequest (records), Password (constraint)
     │   ├── exception/        ItemGenerationException, ItemNotFoundException,
     │   │                     AiServiceUnavailableException
     │   └── port/
