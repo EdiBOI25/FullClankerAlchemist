@@ -117,6 +117,18 @@ class SecurityTest {
 	}
 
 	@Test
+	void defaultLoginPageIsOff() throws Exception {
+		assertThat(status(request("/login", TestPlayer.USERNAME, TestPlayer.PASSWORD))).isEqualTo(404);
+	}
+
+	@Test
+	void defaultLogoutIsOff() throws Exception {
+		assertThat(status(request("/logout", TestPlayer.USERNAME, TestPlayer.PASSWORD)
+				.POST(HttpRequest.BodyPublishers.noBody())))
+				.isEqualTo(404);
+	}
+
+	@Test
 	void plainTextCombineIsUnsupportedWhenLoggedIn() throws Exception {
 		assertThat(status(request("/combine", TestPlayer.USERNAME, TestPlayer.PASSWORD)
 				.header(HttpHeaders.CONTENT_TYPE, "text/plain")
