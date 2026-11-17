@@ -59,6 +59,7 @@ class SecurityTest {
 	private static void assertUnauthorized(HttpResponse<String> response) {
 		assertProblem(response, 401, "Invalid or missing credentials");
 		assertThat(response.headers().firstValue(HttpHeaders.WWW_AUTHENTICATE)).isEmpty();
+		assertThat(response.headers().allValues(HttpHeaders.SET_COOKIE)).isEmpty();
 	}
 
 	@ParameterizedTest
@@ -98,11 +99,6 @@ class SecurityTest {
 		assertUnauthorized(wrongPassword);
 		assertUnauthorized(unknownUser);
 		assertThat(unknownUser.body()).isEqualTo(wrongPassword.body());
-	}
-
-	@Test
-	void unauthorizedSetsNoCookie() throws Exception {
-		assertThat(send(request("/items")).headers().allValues(HttpHeaders.SET_COOKIE)).isEmpty();
 	}
 
 	@Test
