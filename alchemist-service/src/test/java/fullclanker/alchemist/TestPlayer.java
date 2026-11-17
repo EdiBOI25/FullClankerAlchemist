@@ -23,6 +23,7 @@ public class TestPlayer {
 		return args -> createUser.create(new Credentials(USERNAME, PASSWORD), Role.USER);
 	}
 
+	// Shortcut: no .with(...) login (httpBasic, user, anonymous) or @WithMockUser overrides this; use .header(AUTHORIZATION, ...). Revisit in #61.
 	@Bean
 	MockMvcBuilderCustomizer logInAsTestPlayer() {
 		return builder -> builder.defaultRequest(get("/").with(httpBasic(USERNAME, PASSWORD)));
