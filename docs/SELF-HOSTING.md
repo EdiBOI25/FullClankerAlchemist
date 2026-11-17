@@ -10,7 +10,7 @@ Both services on a Linux server with Docker Compose, behind Nginx Proxy Manager,
    cd FullClankerAlchemist
    cp .env.example .env
    ```
-   In `.env`: set `AI_PROVIDER` and its API key. Optional: `ALCHEMIST_PORT` (default `2500`), `ALCHEMIST_DATA_DIR` (default `./data`; must be a path starting with `./` or `/`), `ADMIN_USERNAME` and `ADMIN_PASSWORD` for the admin account (rules and effects in `.env.example`). After changing `.env`, run `docker compose up -d`; `docker compose restart` keeps the old values.
+   In `.env`: set `AI_PROVIDER`, its API key, `ADMIN_USERNAME` and `ADMIN_PASSWORD` (the admin account; rules and effects in `.env.example`). Optional: `ALCHEMIST_PORT` (default `2500`), `ALCHEMIST_DATA_DIR` (default `./data`; must be a path starting with `./` or `/`). After changing `.env`, run `docker compose up -d`; `docker compose restart` keeps the old values.
 3. Create the data folder; the app runs as user 1001 and must own it:
    ```bash
    mkdir -p data && sudo chown 1001 data
@@ -20,7 +20,7 @@ Both services on a Linux server with Docker Compose, behind Nginx Proxy Manager,
    ```bash
    docker compose up -d --build
    ```
-5. Check: `docker compose ps` shows both services running, and `curl http://localhost:2500/items` returns the base items.
+5. Check: `docker compose ps` shows both services running, and `curl -u admin http://localhost:2500/items` (your `ADMIN_USERNAME`; curl asks for the password) returns the base items.
 
 ## Reverse proxy (Nginx Proxy Manager)
 Proxy Host: your domain, scheme `http`, forward host = the server's LAN IP (not `localhost`: inside NPM's container that is NPM itself), port `2500`. SSL: same certificate setup as your other services, Force SSL on.
@@ -37,7 +37,7 @@ Containers restart on their own after a crash or reboot (`restart: unless-stoppe
 
 ## Observability
 - Logs and traces: [LOGS.md](LOGS.md). The Zipkin UI is at `http://<server>:2503`.
-- Health: `docker compose ps` shows `healthy`/`unhealthy`. Metrics: `http://<server>:<ALCHEMIST_PORT>/actuator/metrics` (default port 2500). `ai-service` is internal only, so reach its actuator through `docker compose exec`.
+- Health: `docker compose ps` shows `healthy`/`unhealthy`. Metrics (admin only): `curl -u admin http://<server>:<ALCHEMIST_PORT>/actuator/metrics` (default port 2500). `ai-service` is internal only, so reach its actuator through `docker compose exec`.
 
 ## Access
-WireGuard only. There are no accounts until [phase 5](PLAN.md#phase-5--accounts-and-per-user-collections), so anyone who can reach the URL can combine items and spend the AI credits: don't expose it to the internet.
+WireGuard only. Every endpoint except `/actuator/health` needs a login with HTTP Basic; `/actuator/metrics` and `/actuator/info` need the admin. Until sign-up comes in [phase 5](PLAN.md#phase-5--accounts-and-per-user-collections), the admin from `.env` is the only account; after that, anyone who can reach the URL can sign up and spend the AI credits, so don't expose it to the internet. Basic sends the password with every request, readable over plain HTTP, and compose publishes the app port (`ALCHEMIST_PORT`, default 2500) on every interface: use the HTTPS proxy wherever the network isn't yours ([ADR-0013](adr/0013-security-details.md)).
