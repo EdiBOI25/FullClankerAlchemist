@@ -1,6 +1,7 @@
 package fullclanker.alchemist.adapter.in;
 
 import jakarta.validation.ConstraintViolationException;
+import fullclanker.alchemist.TestPlayer;
 import fullclanker.alchemist.domain.exception.AiServiceUnavailableException;
 import fullclanker.alchemist.domain.exception.ItemGenerationException;
 import fullclanker.alchemist.domain.model.Item;
@@ -12,6 +13,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
@@ -26,6 +28,7 @@ import static org.mockito.Mockito.when;
 
 @SpringBootTest
 @AutoConfigureMockMvc
+@Import(TestPlayer.class)
 @Transactional
 class CombineControllerTest {
 

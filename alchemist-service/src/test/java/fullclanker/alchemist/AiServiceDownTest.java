@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,6 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 /** Combines through the real HttpItemGenerator while ai-service is down (the test config points it at a closed port). */
 @SpringBootTest
 @AutoConfigureMockMvc
+@Import(TestPlayer.class)
 @Transactional
 class AiServiceDownTest {
 
