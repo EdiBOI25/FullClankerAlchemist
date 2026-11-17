@@ -14,14 +14,15 @@ A combination is generated once and then remembered, so the same pair always giv
 Needs Docker and a Gemini or Anthropic API key. On Linux, first run `mkdir -p data && sudo chown 1001 data` (the app runs as user 1001).
 
 ```bash
-cp .env.example .env    # set AI_PROVIDER and its API key
+cp .env.example .env    # set AI_PROVIDER, its API key, ADMIN_USERNAME and ADMIN_PASSWORD
 docker compose up -d --build
 ```
 
-Open http://localhost:2500/items for the four base elements, then combine two:
+Every endpoint except `/actuator/health` needs a login (HTTP Basic). Until sign-up exists, use the admin from `.env`: replace `admin` with your `ADMIN_USERNAME`, and curl asks for the password. List the four base elements, then combine two (on Windows, use Git Bash or WSL):
 
 ```bash
-curl -X POST localhost:2500/combine -H "Content-Type: application/json" -d '{"a":"fire","b":"water"}'
+curl -u admin localhost:2500/items
+curl -u admin -X POST localhost:2500/combine -H "Content-Type: application/json" -d '{"a":"fire","b":"water"}'
 ```
 
 - Logs and traces: [docs/LOGS.md](docs/LOGS.md), Zipkin at http://localhost:2503

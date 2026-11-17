@@ -1,5 +1,6 @@
 package fullclanker.alchemist.adapter.in;
 
+import fullclanker.alchemist.TestPlayer;
 import fullclanker.alchemist.domain.model.Item;
 import fullclanker.alchemist.domain.model.Tag;
 import fullclanker.alchemist.domain.port.out.ItemRepository;
@@ -8,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,6 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
 @AutoConfigureMockMvc
+@Import(TestPlayer.class)
 @Transactional
 class ItemControllerTest {
 
