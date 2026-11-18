@@ -9,6 +9,7 @@ import org.springframework.boot.security.autoconfigure.actuate.web.servlet.Endpo
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -19,6 +20,8 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.logout.HttpStatusReturningLogoutSuccessHandler;
+import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
 import org.springframework.web.servlet.HandlerExceptionResolver;
 
 @Configuration
@@ -37,14 +40,16 @@ public class SecurityConfig {
 		return new ProviderManager(provider);
 	}
 
-	/** Session or HTTP Basic on every endpoint except signup, login and health; other actuator endpoints are admin-only. MVC exception handlers write 401 and 403. */
+	/** Session or HTTP Basic on every endpoint except signup, login, logout and health; other actuator endpoints are admin-only. MVC exception handlers write 401 and 403. */
 	@Bean
 	@ConditionalOnWebApplication
 	public SecurityFilterChain securityFilterChain(HttpSecurity http,
 			@Qualifier("handlerExceptionResolver") HandlerExceptionResolver resolver) throws Exception {
 		return http
 				.csrf(csrf -> csrf.disable())
-				.logout(logout -> logout.disable())
+				.logout(logout -> logout
+						.logoutRequestMatcher(PathPatternRequestMatcher.pathPattern(HttpMethod.POST, "/auth/logout"))
+						.logoutSuccessHandler(new HttpStatusReturningLogoutSuccessHandler(HttpStatus.NO_CONTENT)))
 				.requestCache(cache -> cache.disable())
 				.httpBasic(basic -> basic.authenticationEntryPoint((request, response, exception) ->
 						resolver.resolveException(request, response, null, exception)))

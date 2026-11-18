@@ -10,6 +10,7 @@ import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.stubbing.Answer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -448,6 +449,44 @@ class AuthControllerTest {
 
 		assertThat(responses).extracting(HttpResponse::statusCode).containsExactly(200, 401, 400, 400);
 		assertThat(responses).allSatisfy(response -> assertThat(response.body()).doesNotContain(password));
+	}
+
+	@Test
+	void logOutEndsTheSession() throws Exception {
+		givenUser("vera", PASSWORD);
+		String cookie = assertSessionCookie(logIn(credentials("vera", PASSWORD)));
+
+		HttpResponse<String> response = send(withCookie(request("/auth/logout"), cookie)
+				.POST(HttpRequest.BodyPublishers.noBody()));
+
+		assertThat(response.statusCode()).isEqualTo(204);
+		assertThat(response.body()).isEmpty();
+		assertThat(response.headers().allValues(HttpHeaders.SET_COOKIE)).isEmpty();
+		assertProblem(send(withCookie(request("/auth/me"), cookie)), 401, "Invalid or missing credentials");
+	}
+
+	@ParameterizedTest
+	@ValueSource(strings = {"GET", "PUT", "DELETE"})
+	void otherMethodsOnLogOutDoNotLogOut(String method) throws Exception {
+		String username = "walt_" + method.toLowerCase();
+		givenUser(username, PASSWORD);
+		String cookie = assertSessionCookie(logIn(credentials(username, PASSWORD)));
+
+		HttpResponse<String> response = send(withCookie(request("/auth/logout"), cookie)
+				.method(method, HttpRequest.BodyPublishers.noBody()));
+
+		assertThat(response.statusCode()).isNotEqualTo(204);
+		assertThat(send(withCookie(request("/auth/me"), cookie)).statusCode()).isEqualTo(200);
+	}
+
+	@Test
+	void anonymousBrowserLogOutGetsNoContentNotARedirect() throws Exception {
+		HttpResponse<String> response = send(request("/auth/logout")
+				.header(HttpHeaders.ACCEPT, MediaType.TEXT_HTML_VALUE)
+				.POST(HttpRequest.BodyPublishers.noBody()));
+
+		assertThat(response.statusCode()).isEqualTo(204);
+		assertThat(response.headers().firstValue(HttpHeaders.LOCATION)).isEmpty();
 	}
 
 }
