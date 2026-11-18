@@ -8,6 +8,7 @@ import org.springframework.boot.health.actuate.endpoint.HealthEndpoint;
 import org.springframework.boot.security.autoconfigure.actuate.web.servlet.EndpointRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -25,7 +26,7 @@ public class SecurityConfig {
 		return new BCryptPasswordEncoder();
 	}
 
-	/** HTTP Basic on every endpoint except health; other actuator endpoints are admin-only. MVC exception handlers write 401 and 403. */
+	/** HTTP Basic on every endpoint except signup and health; other actuator endpoints are admin-only. MVC exception handlers write 401 and 403. */
 	@Bean
 	@ConditionalOnWebApplication
 	public SecurityFilterChain securityFilterChain(HttpSecurity http,
@@ -40,6 +41,7 @@ public class SecurityConfig {
 						resolver.resolveException(request, response, null, exception)))
 				.authorizeHttpRequests(requests -> requests
 						.dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
+						.requestMatchers(HttpMethod.POST, "/auth/signup").permitAll()
 						.requestMatchers(EndpointRequest.to(HealthEndpoint.class)).permitAll()
 						.requestMatchers(EndpointRequest.toAnyEndpoint()).hasRole("ADMIN")
 						.anyRequest().authenticated())

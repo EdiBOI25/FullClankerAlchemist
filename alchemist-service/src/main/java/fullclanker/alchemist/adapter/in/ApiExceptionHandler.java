@@ -3,6 +3,7 @@ package fullclanker.alchemist.adapter.in;
 import fullclanker.alchemist.domain.exception.AiServiceUnavailableException;
 import fullclanker.alchemist.domain.exception.ItemGenerationException;
 import fullclanker.alchemist.domain.exception.ItemNotFoundException;
+import fullclanker.alchemist.domain.exception.UsernameTakenException;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
@@ -15,7 +16,12 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import java.util.stream.Collectors;
 
 @RestControllerAdvice
-public class CombineExceptionHandler {
+public class ApiExceptionHandler {
+
+	@ExceptionHandler(UsernameTakenException.class)
+	ProblemDetail handleUsernameTaken(UsernameTakenException exception) {
+		return problem(HttpStatus.CONFLICT, exception.getMessage());
+	}
 
 	@ExceptionHandler(ItemNotFoundException.class)
 	ProblemDetail handleItemNotFound(ItemNotFoundException exception) {
