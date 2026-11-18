@@ -6,6 +6,7 @@ import fullclanker.alchemist.domain.model.User;
 import fullclanker.alchemist.domain.port.in.CreateUser;
 import fullclanker.alchemist.domain.port.out.UserRepository;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -13,7 +14,11 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.stubbing.Answer;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.logging.LogLevel;
+import org.springframework.boot.logging.LoggingSystem;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.dao.InvalidDataAccessApiUsageException;
@@ -74,6 +79,9 @@ class AuthControllerTest {
 
 	@Autowired
 	private CreateUser createUser;
+
+	@Autowired
+	private LoggingSystem logging;
 
 	private HttpRequest.Builder request(String path) {
 		return HttpRequest.newBuilder(URI.create("http://localhost:" + port + path));
@@ -449,6 +457,40 @@ class AuthControllerTest {
 
 		assertThat(responses).extracting(HttpResponse::statusCode).containsExactly(200, 401, 400, 400);
 		assertThat(responses).allSatisfy(response -> assertThat(response.body()).doesNotContain(password));
+	}
+
+	/** Raises every logger to TRACE (the pinned ones stay at INFO) only around these requests. */
+	@Test
+	@ExtendWith(OutputCaptureExtension.class)
+	void passwordNeverReachesTheLogsEvenAtTrace(CapturedOutput output) throws Exception {
+		String password = "LogSecret9191";
+		LogLevel rootLevel = logging.getLoggerConfiguration(LoggingSystem.ROOT_LOGGER_NAME).getEffectiveLevel();
+		List<HttpResponse<String>> responses;
+		logging.setLogLevel(LoggingSystem.ROOT_LOGGER_NAME, LogLevel.TRACE);
+		try {
+			givenUser("zoe", password);
+			responses = List.of(
+					signUp(credentials("ZOE", password)),
+					signUp(credentials("bad name", password)),
+					signUp(credentials("zoe2", password + "x".repeat(60))),
+					signUp("{\"username\":\"zoe3\",\"password\":" + password + "}"),
+					send(request("/auth/signup")
+							.header(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_PLAIN_VALUE)
+							.POST(HttpRequest.BodyPublishers.ofString(credentials("zoe4", password)))),
+					logIn(credentials("zoe", password)),
+					logIn(credentials("zoe", password + "x")),
+					send(withBasic(request("/auth/me"), "zoe", password)),
+					send(withBasic(request("/auth/me"), "zoe", password + "y")));
+		}
+		finally {
+			logging.setLogLevel(LoggingSystem.ROOT_LOGGER_NAME, rootLevel);
+		}
+
+		assertThat(responses).extracting(HttpResponse::statusCode)
+				.containsExactly(409, 400, 400, 400, 415, 200, 401, 200, 401);
+		assertThat(output.getAll()).contains(" TRACE ").doesNotContain(password,
+				HttpHeaders.encodeBasicAuth("zoe", password, StandardCharsets.UTF_8),
+				HttpHeaders.encodeBasicAuth("zoe", password + "y", StandardCharsets.UTF_8));
 	}
 
 	@Test
