@@ -1,6 +1,7 @@
 package fullclanker.alchemist.application;
 
 import fullclanker.alchemist.domain.dto.Credentials;
+import fullclanker.alchemist.domain.dto.UserDto;
 import fullclanker.alchemist.domain.exception.UsernameTakenException;
 import fullclanker.alchemist.domain.model.Role;
 import fullclanker.alchemist.domain.model.User;
@@ -26,14 +27,15 @@ public class UserService implements CreateUser {
 	}
 
 	@Override
-	public void create(Credentials credentials, Role role) {
+	public UserDto create(Credentials credentials, Role role) {
 		String hash = passwordEncoder.encode(credentials.password());
-		transactions.executeWithoutResult(status -> {
+		User saved = transactions.execute(status -> {
 			if (users.findByUsernameIgnoreCase(credentials.username()).isPresent()) {
 				throw new UsernameTakenException(credentials.username());
 			}
-			users.save(new User(credentials.username(), hash, role));
+			return users.save(new User(credentials.username(), hash, role));
 		});
+		return new UserDto(saved.getUsername(), saved.getRole());
 	}
 
 }

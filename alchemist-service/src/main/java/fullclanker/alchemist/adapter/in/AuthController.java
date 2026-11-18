@@ -29,8 +29,7 @@ public class AuthController {
 	@PostMapping("/signup")
 	@ResponseStatus(HttpStatus.CREATED)
 	public UserDto signUp(@Valid @RequestBody Credentials credentials) {
-		createUser.create(credentials, Role.USER);
-		return new UserDto(credentials.username(), Role.USER);
+		return createUser.create(credentials, Role.USER);
 	}
 
 	/** The logged-in user. */
