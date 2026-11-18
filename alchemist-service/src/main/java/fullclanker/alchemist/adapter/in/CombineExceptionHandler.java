@@ -12,6 +12,8 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 
+import java.util.stream.Collectors;
+
 @RestControllerAdvice
 public class CombineExceptionHandler {
 
@@ -32,7 +34,11 @@ public class CombineExceptionHandler {
 
 	@ExceptionHandler(MethodArgumentNotValidException.class)
 	ProblemDetail handleInvalidRequest(MethodArgumentNotValidException exception) {
-		return problem(HttpStatus.BAD_REQUEST, "Request fields must be valid");
+		String fields = exception.getFieldErrors().stream()
+				.map(error -> error.getField() + ": " + error.getDefaultMessage())
+				.sorted()
+				.collect(Collectors.joining("; "));
+		return problem(HttpStatus.BAD_REQUEST, fields);
 	}
 
 	@ExceptionHandler(HandlerMethodValidationException.class)
