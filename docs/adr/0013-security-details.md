@@ -19,7 +19,7 @@ ADR-0011 chose accounts with a session cookie plus HTTP Basic, but left CSRF and
   - name taken by a normal user → warning, that user is left unchanged
   - only one set, or an invalid value → startup fails
   - a new `ADMIN_USERNAME` adds a second admin while the old one keeps working
-- Access: public = signup, login, `/actuator/health`; admin = `/actuator/metrics`, `/actuator/info`; everything else needs login. The servlet error dispatch to Boot's `/error` is permitted, so errors keep their status (404, 415…) instead of becoming 401. `ai-service` has no auth; compose doesn't publish it.
+- Access: public = signup, login, logout (no effect without a session), `/actuator/health`; admin = `/actuator/metrics`, `/actuator/info`; everything else needs login. The servlet error dispatch to Boot's `/error` is permitted, so errors keep their status (404, 415…) instead of becoming 401. `ai-service` has no auth; compose doesn't publish it.
 
 ## Consequences
 - A restart logs everyone out; Basic clients don't notice.

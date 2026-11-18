@@ -1,7 +1,7 @@
 # Functional features
 
 - [x] User starts with 4 items: water, air, fire and earth
-- [ ] User can sign up, log in and log out
+- [x] User can sign up, log in and log out
 - [ ] User is able to merge two items via REST and via AI chat
 - [ ] *(Optional, if website is needed)* User is able to merge two items via *drag and drop*
 - [x] AI decides the result of the merge
@@ -40,7 +40,7 @@ From the teacher, see [teacher-requirements.txt](teacher-requirements.txt):
 - [ ] **Mark 6:** validation of at least 10 fields (we validate every input), at least 10 unit tests with at least one mocked dependency, Docker with a `compose.yaml` running several containers
 - [ ] **Mark 7:** context-aware, parameterized AI: chat remembers previous messages and answers in a chosen tone or role
 - [ ] **Mark 8:** RAG pipeline with Spring AI and Chroma
-- [ ] **Mark 9:** Spring Security: sign up, login, logout, roles ([ADR-0011](adr/0011-accounts-and-per-user-collections.md))
+- [x] **Mark 9:** Spring Security: sign up, login, logout, roles ([ADR-0011](adr/0011-accounts-and-per-user-collections.md))
 - [ ] **Mark 10:** MCP server
 
 Also asked for by the teacher: observability, resilience, tests of the AI generation and the chat.

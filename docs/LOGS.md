@@ -29,3 +29,8 @@ Time, level, process id, `[service]`, `[thread]`, `[traceId-spanId]` (blank outs
 | `AI service unavailable for A + B; retrying` | `alchemist-service` can't reach `ai-service` and tries once more; if that fails too, the request returns 503 |
 | `Dropped N spans due to ConnectException` | Zipkin isn't reachable; for local runs start it with `docker compose up -d zipkin` |
 | `[SQLITE_CANTOPEN] Unable to open the database file` | the data folder isn't writable; see [SELF-HOSTING.md](SELF-HOSTING.md) step 3 |
+| `Could not check credentials` | a login or Basic request couldn't look up the user (e.g. the database stayed locked); the request returns 500 |
+| `ADMIN_USERNAME … belongs to a normal user` | someone signed up with the admin's name first; no admin was created |
+
+## Log levels
+With Docker Compose, add a level to `.env`, e.g. `LOGGING_LEVEL_ROOT=DEBUG` or `LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_WEB=DEBUG` (packages only; both services get it), then run `docker compose up -d`. When you raise root or a package, three loggers stay at INFO, because at DEBUG or TRACE they would log passwords: Tomcat's `Http11InputBuffer` and Spring MVC's `ExceptionHandlerExceptionResolver` and `HandlerMethod` (pinned in `application.properties`). Don't leave TRACE on: Tomcat then also logs form-encoded request bodies, passwords included.

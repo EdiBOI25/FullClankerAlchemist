@@ -36,4 +36,5 @@ build/
 *.db
 *.db-*
 .env
+cookies.txt
 docs/ai-issue-workflow.md
