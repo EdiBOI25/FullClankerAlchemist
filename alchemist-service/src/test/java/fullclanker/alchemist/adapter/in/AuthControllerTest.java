@@ -1,7 +1,9 @@
 package fullclanker.alchemist.adapter.in;
 
+import fullclanker.alchemist.domain.dto.Credentials;
 import fullclanker.alchemist.domain.model.Role;
 import fullclanker.alchemist.domain.model.User;
+import fullclanker.alchemist.domain.port.in.CreateUser;
 import fullclanker.alchemist.domain.port.out.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -9,6 +11,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.stubbing.Answer;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.HttpHeaders;
@@ -23,6 +26,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -64,8 +68,16 @@ class AuthControllerTest {
 	@MockitoSpyBean
 	private UserRepository users;
 
+	@Autowired
+	private CreateUser createUser;
+
 	private HttpRequest.Builder request(String path) {
 		return HttpRequest.newBuilder(URI.create("http://localhost:" + port + path));
+	}
+
+	private static HttpRequest.Builder withBasic(HttpRequest.Builder request, String username, String password) {
+		return request.header(HttpHeaders.AUTHORIZATION,
+				"Basic " + HttpHeaders.encodeBasicAuth(username, password, StandardCharsets.UTF_8));
 	}
 
 	private HttpResponse<String> send(HttpRequest.Builder request) throws Exception {
@@ -229,6 +241,36 @@ class AuthControllerTest {
 
 		assertThat(responses).extracting(HttpResponse::statusCode).containsExactly(201, 409, 400, 400);
 		assertThat(responses).allSatisfy(response -> assertThat(response.body()).doesNotContain(password));
+	}
+
+	@Test
+	void meWithBasicReturnsTheUserAsStored() throws Exception {
+		assertThat(signUp(credentials("Henry", PASSWORD)).statusCode()).isEqualTo(201);
+
+		HttpResponse<String> response = send(withBasic(request("/auth/me"), "hENRY", PASSWORD));
+
+		assertThat(response.statusCode()).isEqualTo(200);
+		assertThat(new JsonContent(response.body())).isStrictlyEqualTo("""
+				{"username":"Henry","role":"USER"}
+				""");
+		assertThat(response.headers().allValues(HttpHeaders.SET_COOKIE)).isEmpty();
+	}
+
+	@Test
+	void meShowsTheAdminRole() throws Exception {
+		createUser.create(new Credentials("Root_Admin", PASSWORD), Role.ADMIN);
+
+		HttpResponse<String> response = send(withBasic(request("/auth/me"), "Root_Admin", PASSWORD));
+
+		assertThat(response.statusCode()).isEqualTo(200);
+		assertThat(new JsonContent(response.body())).isStrictlyEqualTo("""
+				{"username":"Root_Admin","role":"ADMIN"}
+				""");
+	}
+
+	@Test
+	void meWithoutLoginIsUnauthorized() throws Exception {
+		assertProblem(send(request("/auth/me")), 401, "Invalid or missing credentials");
 	}
 
 }

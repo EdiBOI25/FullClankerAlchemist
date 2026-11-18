@@ -6,6 +6,9 @@ import fullclanker.alchemist.domain.model.Role;
 import fullclanker.alchemist.domain.port.in.CreateUser;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -28,6 +31,16 @@ public class AuthController {
 	public UserDto signUp(@Valid @RequestBody Credentials credentials) {
 		createUser.create(credentials, Role.USER);
 		return new UserDto(credentials.username(), Role.USER);
+	}
+
+	/** The logged-in user. */
+	@GetMapping("/me")
+	public UserDto me(@AuthenticationPrincipal UserDetails user) {
+		Role role = user.getAuthorities().stream()
+				.map(authority -> Role.valueOf(authority.getAuthority().substring("ROLE_".length())))
+				.findFirst()
+				.orElseThrow();
+		return new UserDto(user.getUsername(), role);
 	}
 
 }
