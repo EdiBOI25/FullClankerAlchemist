@@ -14,6 +14,8 @@ import org.mockito.stubbing.Answer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.dao.DataAccessResourceFailureException;
+import org.springframework.dao.InvalidDataAccessApiUsageException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.annotation.DirtiesContext;
@@ -41,6 +43,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mockingDetails;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -84,10 +87,36 @@ class AuthControllerTest {
 		return client.send(request.build(), HttpResponse.BodyHandlers.ofString());
 	}
 
-	private HttpResponse<String> signUp(String json) throws Exception {
-		return send(request("/auth/signup")
+	private static HttpRequest.Builder withCookie(HttpRequest.Builder request, String cookie) {
+		return request.header(HttpHeaders.COOKIE, cookie);
+	}
+
+	private HttpResponse<String> postJson(HttpRequest.Builder request, String json) throws Exception {
+		return send(request
 				.header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
 				.POST(HttpRequest.BodyPublishers.ofString(json)));
+	}
+
+	private HttpResponse<String> signUp(String json) throws Exception {
+		return postJson(request("/auth/signup"), json);
+	}
+
+	private HttpResponse<String> logIn(String json) throws Exception {
+		return postJson(request("/auth/login"), json);
+	}
+
+	private void givenUser(String username, String password) throws Exception {
+		assertThat(signUp(credentials(username, password)).statusCode()).isEqualTo(201);
+	}
+
+	/** Checks the response sets one HttpOnly, SameSite=Strict session cookie; returns it as a Cookie header value. */
+	private static String assertSessionCookie(HttpResponse<String> response) {
+		List<String> cookies = response.headers().allValues(HttpHeaders.SET_COOKIE);
+		assertThat(cookies).singleElement().asString()
+				.startsWith("JSESSIONID=")
+				.contains("HttpOnly")
+				.contains("SameSite=Strict");
+		return cookies.getFirst().split(";", 2)[0];
 	}
 
 	private static String credentials(String username, String password) {
@@ -271,6 +300,154 @@ class AuthControllerTest {
 	@Test
 	void meWithoutLoginIsUnauthorized() throws Exception {
 		assertProblem(send(request("/auth/me")), 401, "Invalid or missing credentials");
+	}
+
+	@Test
+	void logInReturnsTheUserAndSetsAStrictHttpOnlySessionCookie() throws Exception {
+		givenUser("Jack", PASSWORD);
+
+		HttpResponse<String> response = logIn(credentials("Jack", PASSWORD));
+
+		assertThat(response.statusCode()).isEqualTo(200);
+		assertThat(new JsonContent(response.body())).isStrictlyEqualTo("""
+				{"username":"Jack","role":"USER"}
+				""");
+		assertSessionCookie(response);
+	}
+
+	@Test
+	void sessionCookieAloneLogsInLaterRequests() throws Exception {
+		givenUser("kate", PASSWORD);
+		String cookie = assertSessionCookie(logIn(credentials("kate", PASSWORD)));
+
+		HttpResponse<String> me = send(withCookie(request("/auth/me"), cookie));
+
+		assertThat(me.statusCode()).isEqualTo(200);
+		assertThat(new JsonContent(me.body())).extractingPath("$.username").isEqualTo("kate");
+		assertThat(send(withCookie(request("/items"), cookie)).statusCode()).isEqualTo(200);
+	}
+
+	@Test
+	void logInIgnoresTheUsernameCase() throws Exception {
+		givenUser("Liam", PASSWORD);
+
+		HttpResponse<String> response = logIn(credentials("LIAM", PASSWORD));
+
+		assertThat(response.statusCode()).isEqualTo(200);
+		assertThat(new JsonContent(response.body())).extractingPath("$.username").isEqualTo("Liam");
+	}
+
+	@Test
+	void wrongPasswordAndUnknownUserGetTheSameLogInResponse() throws Exception {
+		givenUser("mia", PASSWORD);
+
+		HttpResponse<String> wrongPassword = logIn(credentials("mia", "wrongpass1"));
+		HttpResponse<String> unknownUser = logIn(credentials("nobody", PASSWORD));
+
+		assertProblem(wrongPassword, 401, "Invalid or missing credentials");
+		assertProblem(unknownUser, 401, "Invalid or missing credentials");
+		assertThat(unknownUser.body()).isEqualTo(wrongPassword.body());
+	}
+
+	@Test
+	void logInWithAnEarlierSessionGetsANewSessionId() throws Exception {
+		givenUser("noah", PASSWORD);
+		givenUser("olga", PASSWORD);
+		String first = assertSessionCookie(logIn(credentials("noah", PASSWORD)));
+
+		HttpResponse<String> second = postJson(withCookie(request("/auth/login"), first), credentials("olga", PASSWORD));
+
+		assertThat(second.statusCode()).isEqualTo(200);
+		String renewed = assertSessionCookie(second);
+		assertThat(renewed).isNotEqualTo(first);
+		assertThat(new JsonContent(send(withCookie(request("/auth/me"), renewed)).body()))
+				.extractingPath("$.username").isEqualTo("olga");
+		assertProblem(send(withCookie(request("/auth/me"), first)), 401, "Invalid or missing credentials");
+	}
+
+	@Test
+	void logInWithAMadeUpSessionCookieGetsAFreshId() throws Exception {
+		givenUser("sara", PASSWORD);
+		String madeUp = "JSESSIONID=MADEUP0000000000000000000000000000";
+
+		HttpResponse<String> response = postJson(withCookie(request("/auth/login"), madeUp), credentials("sara", PASSWORD));
+
+		assertThat(response.statusCode()).isEqualTo(200);
+		String cookie = assertSessionCookie(response);
+		assertThat(cookie).isNotEqualTo(madeUp);
+		assertThat(send(withCookie(request("/auth/me"), cookie)).statusCode()).isEqualTo(200);
+		assertProblem(send(withCookie(request("/auth/me"), madeUp)), 401, "Invalid or missing credentials");
+	}
+
+	@Test
+	void failedLogInKeepsTheEarlierSession() throws Exception {
+		givenUser("tom", PASSWORD);
+		String cookie = assertSessionCookie(logIn(credentials("tom", PASSWORD)));
+
+		HttpResponse<String> failed = postJson(withCookie(request("/auth/login"), cookie), credentials("tom", "wrongpass1"));
+
+		assertProblem(failed, 401, "Invalid or missing credentials");
+		assertThat(new JsonContent(send(withCookie(request("/auth/me"), cookie)).body()))
+				.extractingPath("$.username").isEqualTo("tom");
+	}
+
+	static Stream<RuntimeException> lookupFailures() {
+		return Stream.of(
+				new DataAccessResourceFailureException("database is locked"),
+				new InvalidDataAccessApiUsageException("bad query", new IllegalArgumentException("internal detail")));
+	}
+
+	@ParameterizedTest
+	@MethodSource("lookupFailures")
+	void failingUserLookupIsServerErrorNotBadCredentials(RuntimeException failure) throws Exception {
+		doThrow(failure).when(users).findByUsernameIgnoreCase(anyString());
+
+		assertProblem(logIn(credentials("uma", PASSWORD)), 500, "Could not check credentials, try again later");
+		assertProblem(send(withBasic(request("/auth/me"), "uma", PASSWORD)), 500,
+				"Could not check credentials, try again later");
+	}
+
+	static Stream<Arguments> invalidLogIns() {
+		return Stream.of(
+				Arguments.of(credentials("ab", PASSWORD), USERNAME_RULE),
+				Arguments.of(credentials("paul", "short"), PASSWORD_RULE),
+				Arguments.of("{}", "password: must not be null; username: must not be null"));
+	}
+
+	@ParameterizedTest
+	@MethodSource("invalidLogIns")
+	void logInBreakingTheRulesIsBadRequest(String json, String detail) throws Exception {
+		assertProblem(logIn(json), 400, detail);
+	}
+
+	@Test
+	void plainTextLogInIsUnsupported() throws Exception {
+		HttpResponse<String> response = send(request("/auth/login")
+				.header(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_PLAIN_VALUE)
+				.POST(HttpRequest.BodyPublishers.ofString(credentials("quinn", PASSWORD))));
+
+		assertThat(response.statusCode()).isEqualTo(415);
+		assertThat(response.headers().allValues(HttpHeaders.SET_COOKIE)).isEmpty();
+	}
+
+	@Test
+	void onlyPostLogInIsPublic() throws Exception {
+		assertThat(send(request("/auth/login")).statusCode()).isEqualTo(401);
+	}
+
+	@Test
+	void passwordIsNotInAnyLogInResponse() throws Exception {
+		String password = "Login-secret-77";
+		givenUser("rose", password);
+
+		List<HttpResponse<String>> responses = List.of(
+				logIn(credentials("rose", password)),
+				logIn(credentials("rose", password + "x")),
+				logIn(credentials("bad name", password)),
+				logIn(credentials("rose", password + "x".repeat(60))));
+
+		assertThat(responses).extracting(HttpResponse::statusCode).containsExactly(200, 401, 400, 400);
+		assertThat(responses).allSatisfy(response -> assertThat(response.body()).doesNotContain(password));
 	}
 
 }

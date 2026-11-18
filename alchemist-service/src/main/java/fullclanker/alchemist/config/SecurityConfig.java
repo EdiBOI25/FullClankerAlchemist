@@ -9,6 +9,9 @@ import org.springframework.boot.security.autoconfigure.actuate.web.servlet.Endpo
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.ProviderManager;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -26,7 +29,15 @@ public class SecurityConfig {
 		return new BCryptPasswordEncoder();
 	}
 
-	/** HTTP Basic on every endpoint except signup and health; other actuator endpoints are admin-only. MVC exception handlers write 401 and 403. */
+	/** Checks a username and password against the stored users; used by the JSON login. */
+	@Bean
+	public AuthenticationManager authenticationManager(UserDetailsService users, PasswordEncoder passwordEncoder) {
+		DaoAuthenticationProvider provider = new DaoAuthenticationProvider(users);
+		provider.setPasswordEncoder(passwordEncoder);
+		return new ProviderManager(provider);
+	}
+
+	/** Session or HTTP Basic on every endpoint except signup, login and health; other actuator endpoints are admin-only. MVC exception handlers write 401 and 403. */
 	@Bean
 	@ConditionalOnWebApplication
 	public SecurityFilterChain securityFilterChain(HttpSecurity http,
@@ -41,7 +52,7 @@ public class SecurityConfig {
 						resolver.resolveException(request, response, null, exception)))
 				.authorizeHttpRequests(requests -> requests
 						.dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
-						.requestMatchers(HttpMethod.POST, "/auth/signup").permitAll()
+						.requestMatchers(HttpMethod.POST, "/auth/signup", "/auth/login").permitAll()
 						.requestMatchers(EndpointRequest.to(HealthEndpoint.class)).permitAll()
 						.requestMatchers(EndpointRequest.toAnyEndpoint()).hasRole("ADMIN")
 						.anyRequest().authenticated())
