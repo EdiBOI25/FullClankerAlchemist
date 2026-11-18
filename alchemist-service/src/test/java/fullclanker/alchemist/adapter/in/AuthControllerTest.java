@@ -477,6 +477,12 @@ class AuthControllerTest {
 					send(request("/auth/signup")
 							.header(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_PLAIN_VALUE)
 							.POST(HttpRequest.BodyPublishers.ofString(credentials("zoe4", password)))),
+					send(request("/auth/signup")
+							.header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_FORM_URLENCODED_VALUE)
+							.POST(HttpRequest.BodyPublishers.ofString(credentials("zoe5", password + "%")))),
+					send(request("/auth/login")
+							.header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_FORM_URLENCODED_VALUE)
+							.POST(HttpRequest.BodyPublishers.ofString("username=zoe&password=" + password))),
 					logIn(credentials("zoe", password)),
 					logIn(credentials("zoe", password + "x")),
 					send(withBasic(request("/auth/me"), "zoe", password)),
@@ -487,7 +493,7 @@ class AuthControllerTest {
 		}
 
 		assertThat(responses).extracting(HttpResponse::statusCode)
-				.containsExactly(409, 400, 400, 400, 415, 200, 401, 200, 401);
+				.containsExactly(409, 400, 400, 400, 415, 415, 415, 200, 401, 200, 401);
 		assertThat(output.getAll()).contains(" TRACE ").doesNotContain(password,
 				HttpHeaders.encodeBasicAuth("zoe", password, StandardCharsets.UTF_8),
 				HttpHeaders.encodeBasicAuth("zoe", password + "y", StandardCharsets.UTF_8));

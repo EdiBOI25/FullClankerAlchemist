@@ -8,6 +8,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -37,14 +38,14 @@ public class AuthController {
 	}
 
 	/** Creates a USER account; doesn't log in. */
-	@PostMapping("/signup")
+	@PostMapping(path = "/signup", consumes = MediaType.APPLICATION_JSON_VALUE)
 	@ResponseStatus(HttpStatus.CREATED)
 	public UserDto signUp(@Valid @RequestBody Credentials credentials) {
 		return createUser.create(credentials, Role.USER);
 	}
 
 	/** Starts a session with a new id for valid credentials; a failed login touches no session. */
-	@PostMapping("/login")
+	@PostMapping(path = "/login", consumes = MediaType.APPLICATION_JSON_VALUE)
 	public UserDto logIn(@Valid @RequestBody Credentials credentials, HttpServletRequest request,
 			HttpServletResponse response) {
 		Authentication authentication = authenticationManager.authenticate(
