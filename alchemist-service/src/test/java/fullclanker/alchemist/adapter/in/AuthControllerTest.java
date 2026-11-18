@@ -480,6 +480,31 @@ class AuthControllerTest {
 	}
 
 	@Test
+	void logInThroughAnHttpsProxyGetsASecureCookieAndHsts() throws Exception {
+		givenUser("xena", PASSWORD);
+
+		HttpResponse<String> response = postJson(request("/auth/login").header("X-Forwarded-Proto", "https"),
+				credentials("xena", PASSWORD));
+
+		assertThat(response.statusCode()).isEqualTo(200);
+		assertSessionCookie(response);
+		assertThat(response.headers().firstValue(HttpHeaders.SET_COOKIE).orElseThrow()).contains("; Secure");
+		assertThat(response.headers().firstValue("Strict-Transport-Security").orElseThrow()).startsWith("max-age=");
+	}
+
+	@Test
+	void plainHttpLogInGetsNeitherSecureCookieNorHsts() throws Exception {
+		givenUser("yuri", PASSWORD);
+
+		HttpResponse<String> response = logIn(credentials("yuri", PASSWORD));
+
+		assertThat(response.statusCode()).isEqualTo(200);
+		assertSessionCookie(response);
+		assertThat(response.headers().firstValue(HttpHeaders.SET_COOKIE).orElseThrow()).doesNotContain("Secure");
+		assertThat(response.headers().firstValue("Strict-Transport-Security")).isEmpty();
+	}
+
+	@Test
 	void anonymousBrowserLogOutGetsNoContentNotARedirect() throws Exception {
 		HttpResponse<String> response = send(request("/auth/logout")
 				.header(HttpHeaders.ACCEPT, MediaType.TEXT_HTML_VALUE)
