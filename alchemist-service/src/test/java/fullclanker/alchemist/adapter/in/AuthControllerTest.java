@@ -226,7 +226,7 @@ class AuthControllerTest {
 		assertThat(users.findByUsernameIgnoreCase("bob").orElseThrow().getUsername()).isEqualTo("bob");
 	}
 
-	/** Each name lookup waits up to 500 ms for the other, so without the transaction both miss and both insert. */
+	/** Name lookups wait up to 500 ms for each other, so without the transaction both miss and the second insert fails on the unique index (500 instead of 409). */
 	@Test
 	void concurrentSignUpsOfOneNameInDifferentCaseCreateOneUser() throws Exception {
 		CountDownLatch bothLookedUp = new CountDownLatch(2);
