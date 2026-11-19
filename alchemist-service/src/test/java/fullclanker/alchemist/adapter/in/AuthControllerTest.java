@@ -269,19 +269,6 @@ class AuthControllerTest {
 	}
 
 	@Test
-	void passwordIsNotInAnyResponse() throws Exception {
-		String password = "Secret-pass-42";
-		List<HttpResponse<String>> responses = List.of(
-				signUp(credentials("grace", password)),
-				signUp(credentials("GRACE", password)),
-				signUp(credentials("bad name", password)),
-				signUp(credentials("grace2", password + "x".repeat(60))));
-
-		assertThat(responses).extracting(HttpResponse::statusCode).containsExactly(201, 409, 400, 400);
-		assertThat(responses).allSatisfy(response -> assertThat(response.body()).doesNotContain(password));
-	}
-
-	@Test
 	void meWithBasicReturnsTheUserAsStored() throws Exception {
 		assertThat(signUp(credentials("Henry", PASSWORD)).statusCode()).isEqualTo(201);
 
@@ -444,32 +431,17 @@ class AuthControllerTest {
 		assertThat(send(request("/auth/login")).statusCode()).isEqualTo(401);
 	}
 
-	@Test
-	void passwordIsNotInAnyLogInResponse() throws Exception {
-		String password = "Login-secret-77";
-		givenUser("rose", password);
-
-		List<HttpResponse<String>> responses = List.of(
-				logIn(credentials("rose", password)),
-				logIn(credentials("rose", password + "x")),
-				logIn(credentials("bad name", password)),
-				logIn(credentials("rose", password + "x".repeat(60))));
-
-		assertThat(responses).extracting(HttpResponse::statusCode).containsExactly(200, 401, 400, 400);
-		assertThat(responses).allSatisfy(response -> assertThat(response.body()).doesNotContain(password));
-	}
-
 	/** Raises every logger to TRACE (the pinned ones stay at INFO) only around these requests. */
 	@Test
 	@ExtendWith(OutputCaptureExtension.class)
-	void passwordNeverReachesTheLogsEvenAtTrace(CapturedOutput output) throws Exception {
+	void passwordNeverReachesResponsesOrLogsEvenAtTrace(CapturedOutput output) throws Exception {
 		String password = "LogSecret9191";
 		LogLevel rootLevel = logging.getLoggerConfiguration(LoggingSystem.ROOT_LOGGER_NAME).getEffectiveLevel();
 		List<HttpResponse<String>> responses;
 		logging.setLogLevel(LoggingSystem.ROOT_LOGGER_NAME, LogLevel.TRACE);
 		try {
-			givenUser("zoe", password);
 			responses = List.of(
+					signUp(credentials("zoe", password)),
 					signUp(credentials("ZOE", password)),
 					signUp(credentials("bad name", password)),
 					signUp(credentials("zoe2", password + "x".repeat(60))),
@@ -493,7 +465,8 @@ class AuthControllerTest {
 		}
 
 		assertThat(responses).extracting(HttpResponse::statusCode)
-				.containsExactly(409, 400, 400, 400, 415, 415, 415, 200, 401, 200, 401);
+				.containsExactly(201, 409, 400, 400, 400, 415, 415, 415, 200, 401, 200, 401);
+		assertThat(responses).allSatisfy(response -> assertThat(response.body()).doesNotContain(password));
 		assertThat(output.getAll()).contains(" TRACE ").doesNotContain(password,
 				HttpHeaders.encodeBasicAuth("zoe", password, StandardCharsets.UTF_8),
 				HttpHeaders.encodeBasicAuth("zoe", password + "y", StandardCharsets.UTF_8));
