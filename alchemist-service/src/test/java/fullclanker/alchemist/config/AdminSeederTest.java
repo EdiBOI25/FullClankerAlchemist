@@ -79,7 +79,7 @@ class AdminSeederTest {
 	void invalidUsernameFailsNamingIt(String username) {
 		assertThatThrownBy(() -> seed(username, PASSWORD))
 				.isInstanceOf(IllegalStateException.class)
-				.hasMessageStartingWith("ADMIN_USERNAME must match");
+				.hasMessage("ADMIN_USERNAME must be 3 to 30 characters: a-z, A-Z, 0-9, _ or -");
 		assertThat(users.findAll()).isEmpty();
 	}
 

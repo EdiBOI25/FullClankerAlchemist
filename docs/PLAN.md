@@ -39,7 +39,7 @@ Validation with Bean Validation; tests mock `ItemGenerator` with Mockito.
 - [x] #57 docs: ADR-0013 security details (CSRF, sessions, username and password rules)
 - [x] #58 feat: `User` entity with roles (`USER`, `ADMIN`), admin account from `.env`
 - [x] #59 feat: login required on every endpoint (HTTP Basic)
-- [ ] #60 feat: sign up, login, logout and `/auth/me`
+- [x] #60 feat: sign up, login, logout and `/auth/me`
 - [ ] #61 feat: `user_item`: every user gets the 4 base items, combines only their own items and sees them by default
 - [ ] #62 feat: `scope=mine|all` for items and recipes (e.g. `GET /recipes?scope=all&item=iron`)
 - [ ] #63 feat: `discovered_by` on items and recipes

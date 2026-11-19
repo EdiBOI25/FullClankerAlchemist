@@ -19,7 +19,7 @@ ADR-0011 chose accounts with a session cookie plus HTTP Basic, but left CSRF and
   - name taken by a normal user → warning, that user is left unchanged
   - only one set, or an invalid value → startup fails
   - a new `ADMIN_USERNAME` adds a second admin while the old one keeps working
-- Access: public = signup, login, `/actuator/health`; admin = `/actuator/metrics`, `/actuator/info`; everything else needs login. The servlet error dispatch to Boot's `/error` is permitted, so errors keep their status (404, 415…) instead of becoming 401. `ai-service` has no auth; compose doesn't publish it.
+- Access: public = signup, login, logout (no effect without a session), `/actuator/health`; admin = `/actuator/metrics`, `/actuator/info`; everything else needs login. The servlet error dispatch to Boot's `/error` is permitted, so errors keep their status (404, 415…) instead of becoming 401. `ai-service` has no auth; compose doesn't publish it.
 
 ## Consequences
 - A restart logs everyone out; Basic clients don't notice.
@@ -28,6 +28,6 @@ ADR-0011 chose accounts with a session cookie plus HTTP Basic, but left CSRF and
 - Forwarded headers can be faked: NPM passes a client's own `X-Forwarded-Proto` and `X-Forwarded-Host` through, and Boot trusts them from any internal address (`server.tomcat.remoteip.internal-proxies`: private, loopback, link-local and CGNAT ranges); a machine on the LAN can fake its client IP too. They only change that client's own request; no access decision uses them.
 - The generic 401 hides whether a username exists, but signup's 409 still reveals it. Accepted.
 - Not planned: password change, account deletion, promoting users, rate limiting, closed signup. So:
-  - a leaked password or an abusive account needs a manual DB edit;
+  - a leaked password or an abusive account needs a manual DB edit and a restart (sessions keep the old login until they expire);
   - login guesses are only slowed by bcrypt, and every request with a Basic header costs one bcrypt check, so a flood can max out the CPU;
   - anyone who can reach the app can sign up and spend AI credits.

@@ -14,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
@@ -147,6 +148,33 @@ class CombineControllerTest {
 						""".formatted(tooLong)))
 				.hasStatus(400)
 				.hasContentType(MediaType.APPLICATION_PROBLEM_JSON);
+	}
+
+	@Test
+	void badRequestNamesEachInvalidFieldWithItsRule() {
+		assertThat(mvc.post().uri("/combine")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("""
+						{"a":"%s","b":" "}
+						""".formatted("x".repeat(51))))
+				.hasStatus(400)
+				.bodyJson()
+				.extractingPath("$.detail")
+				.isEqualTo("a: size must be between 0 and 50; b: must not be blank");
+	}
+
+	@Test
+	void badRequestIsInEnglishWhateverTheClientLanguage() {
+		assertThat(mvc.post().uri("/combine")
+				.header(HttpHeaders.ACCEPT_LANGUAGE, "de")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("""
+						{"a":" ","b":"water"}
+						"""))
+				.hasStatus(400)
+				.bodyJson()
+				.extractingPath("$.detail")
+				.isEqualTo("a: must not be blank");
 	}
 
 }

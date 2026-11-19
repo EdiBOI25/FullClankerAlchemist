@@ -1,6 +1,7 @@
 package fullclanker.alchemist.application;
 
 import fullclanker.alchemist.domain.dto.Credentials;
+import fullclanker.alchemist.domain.dto.UserDto;
 import fullclanker.alchemist.domain.exception.UsernameTakenException;
 import fullclanker.alchemist.domain.model.Role;
 import fullclanker.alchemist.domain.model.User;
@@ -46,9 +47,10 @@ class UserServiceTest {
 
 	@ParameterizedTest
 	@EnumSource(Role.class)
-	void roleIsStored(Role role) {
-		createUser.create(new Credentials("alice", PASSWORD), role);
+	void roleIsStoredAndReturned(Role role) {
+		UserDto created = createUser.create(new Credentials("Alice", PASSWORD), role);
 
+		assertThat(created).isEqualTo(new UserDto("Alice", role));
 		assertThat(users.findByUsernameIgnoreCase("alice").orElseThrow().getRole()).isEqualTo(role);
 	}
 
