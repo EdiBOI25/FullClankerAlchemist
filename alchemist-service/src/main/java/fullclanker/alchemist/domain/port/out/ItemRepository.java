@@ -12,6 +12,9 @@ public interface ItemRepository extends JpaRepository<Item, Long> {
 
 	Optional<Item> findByNameIgnoreCase(String name);
 
+	@EntityGraph(attributePaths = "tags")
+	List<Item> findAllByOrderByIdAsc();
+
 	/** The items in the user's collection, oldest first. */
 	@EntityGraph(attributePaths = "tags")
 	@Query("select i from Item i where exists "
