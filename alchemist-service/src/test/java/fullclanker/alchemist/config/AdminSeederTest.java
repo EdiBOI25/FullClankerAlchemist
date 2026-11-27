@@ -1,9 +1,12 @@
 package fullclanker.alchemist.config;
 
 import fullclanker.alchemist.domain.dto.Credentials;
+import fullclanker.alchemist.domain.model.Item;
 import fullclanker.alchemist.domain.model.Role;
 import fullclanker.alchemist.domain.model.User;
 import fullclanker.alchemist.domain.port.in.CreateUser;
+import fullclanker.alchemist.domain.port.out.ItemRepository;
+import fullclanker.alchemist.domain.port.out.UserItemRepository;
 import fullclanker.alchemist.domain.port.out.UserRepository;
 import jakarta.validation.Validator;
 import org.junit.jupiter.api.AfterEach;
@@ -33,6 +36,12 @@ class AdminSeederTest {
 	private UserRepository users;
 
 	@Autowired
+	private UserItemRepository userItems;
+
+	@Autowired
+	private ItemRepository items;
+
+	@Autowired
 	private PasswordEncoder passwordEncoder;
 
 	@Autowired
@@ -40,6 +49,7 @@ class AdminSeederTest {
 
 	@AfterEach
 	void clearUsers() {
+		userItems.deleteAll();
 		users.deleteAll();
 	}
 
@@ -112,6 +122,15 @@ class AdminSeederTest {
 		User boss = user("boss");
 		assertThat(boss.getRole()).isEqualTo(Role.ADMIN);
 		assertThat(passwordEncoder.matches(PASSWORD, boss.getPassword())).isTrue();
+	}
+
+	@Test
+	void createdAdminOwnsTheBaseItems() {
+		seed("boss", PASSWORD);
+
+		User boss = user("boss");
+		assertThat(Item.BASE_NAMES).allSatisfy(name -> assertThat(
+				userItems.existsByUserAndItem(boss, items.findByNameIgnoreCase(name).orElseThrow())).isTrue());
 	}
 
 	@Test
