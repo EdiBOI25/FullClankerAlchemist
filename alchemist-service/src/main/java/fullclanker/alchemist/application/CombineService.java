@@ -7,11 +7,14 @@ import fullclanker.alchemist.domain.exception.ItemNotFoundException;
 import fullclanker.alchemist.domain.model.Item;
 import fullclanker.alchemist.domain.model.Recipe;
 import fullclanker.alchemist.domain.model.Tag;
+import fullclanker.alchemist.domain.model.User;
 import fullclanker.alchemist.domain.port.in.CombineItems;
 import fullclanker.alchemist.domain.port.out.ItemGenerator;
 import fullclanker.alchemist.domain.port.out.ItemRepository;
 import fullclanker.alchemist.domain.port.out.RecipeRepository;
 import fullclanker.alchemist.domain.port.out.TagRepository;
+import fullclanker.alchemist.domain.port.out.UserItemRepository;
+import fullclanker.alchemist.domain.port.out.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -26,44 +29,60 @@ public class CombineService implements CombineItems {
 	private final ItemRepository items;
 	private final TagRepository tags;
 	private final RecipeRepository recipes;
+	private final UserRepository users;
+	private final UserItemRepository userItems;
 	private final ItemGenerator generator;
 	private final TransactionTemplate transactions;
 
-	public CombineService(ItemRepository items, TagRepository tags, RecipeRepository recipes, ItemGenerator generator,
-			TransactionTemplate transactions) {
+	public CombineService(ItemRepository items, TagRepository tags, RecipeRepository recipes, UserRepository users,
+			UserItemRepository userItems, ItemGenerator generator, TransactionTemplate transactions) {
 		this.items = items;
 		this.tags = tags;
 		this.recipes = recipes;
+		this.users = users;
+		this.userItems = userItems;
 		this.generator = generator;
 		this.transactions = transactions;
 	}
 
 	@Override
-	public CombineResult combine(String nameA, String nameB) {
-		Item itemA = findItem(nameA);
-		Item itemB = findItem(nameB);
+	public CombineResult combine(String username, String nameA, String nameB) {
+		User user = users.findByUsernameIgnoreCase(username)
+				.orElseThrow(() -> new IllegalStateException("Unknown user " + username));
+		Item itemA = findOwnedItem(user, nameA, null);
+		Item itemB = findOwnedItem(user, nameB, itemA);
 		Item left = itemA.getId() <= itemB.getId() ? itemA : itemB;
 		Item right = left == itemA ? itemB : itemA;
 
 		return recipes.findByItemA_IdAndItemB_Id(left.getId(), right.getId())
-				.map(recipe -> new CombineResult(ItemDto.from(recipe.getResult()), false))
-				.orElseGet(() -> generate(left, right));
+				.map(recipe -> {
+					// Checked outside a transaction so a repeat combine doesn't take the write lock (ADR-0012)
+					if (!userItems.existsByUser_IdAndItem_Id(user.getId(), recipe.getResult().getId())) {
+						transactions.executeWithoutResult(status -> userItems.addIfMissing(user, recipe.getResult()));
+					}
+					return new CombineResult(ItemDto.from(recipe.getResult()), false);
+				})
+				.orElseGet(() -> generate(user, left, right));
 	}
 
-	private Item findItem(String name) {
+	/** An item the user doesn't own is reported like an unknown one; {@code checked} is an item already found owned, so a self-combine checks once. */
+	private Item findOwnedItem(User user, String name, Item checked) {
 		String normalizedName = name == null ? "" : name.trim();
 		if (normalizedName.isBlank()) {
 			throw new IllegalArgumentException("Item name cannot be blank");
 		}
 		return items.findByNameIgnoreCase(normalizedName)
+				.filter(item -> (checked != null && item.getId().equals(checked.getId()))
+						|| userItems.existsByUser_IdAndItem_Id(user.getId(), item.getId()))
 				.orElseThrow(() -> new ItemNotFoundException(normalizedName));
 	}
 
-	private CombineResult generate(Item left, Item right) {
+	private CombineResult generate(User user, Item left, Item right) {
 		GeneratedItem generated = generator.generate(left.getName(), right.getName());
 		return transactions.execute(status -> {
 			Optional<Recipe> existingRecipe = recipes.findByItemA_IdAndItemB_Id(left.getId(), right.getId());
 			if (existingRecipe.isPresent()) {
+				userItems.addIfMissing(user, existingRecipe.get().getResult());
 				return new CombineResult(ItemDto.from(existingRecipe.get().getResult()), false);
 			}
 
@@ -72,6 +91,7 @@ public class CombineService implements CombineItems {
 			Optional<Item> existingItem = items.findByNameIgnoreCase(name);
 			Item result = existingItem.orElseGet(() -> create(name, generated));
 			recipes.save(new Recipe(left, right, result));
+			userItems.addIfMissing(user, result);
 			return new CombineResult(ItemDto.from(result), existingItem.isEmpty());
 		});
 	}

@@ -1,5 +1,6 @@
 package fullclanker.alchemist.application;
 
+import fullclanker.alchemist.TestPlayer;
 import fullclanker.alchemist.domain.dto.CombineResult;
 import fullclanker.alchemist.domain.dto.GeneratedItem;
 import fullclanker.alchemist.domain.port.in.CombineItems;
@@ -9,6 +10,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -29,8 +32,11 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 @SpringBootTest
+@Import(TestPlayer.class)
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 class CombineServiceConcurrencyTest {
+
+	private static final String PLAYER = TestPlayer.USERNAME;
 
 	@TempDir
 	static Path temporaryDirectory;
@@ -40,6 +46,9 @@ class CombineServiceConcurrencyTest {
 
 	@Autowired
 	private RecipeRepository recipes;
+
+	@Autowired
+	private JdbcTemplate jdbc;
 
 	@MockitoBean
 	private ItemGenerator generator;
@@ -52,16 +61,50 @@ class CombineServiceConcurrencyTest {
 
 	@Test
 	void concurrentFirstCombinesOfAPairBothReturnTheSavedItem() throws Exception {
-		assertOnlyOneCreates("Mist", () -> combine.combine("water", "air"), () -> combine.combine("water", "air"));
+		assertOnlyOneCreates("Mist", () -> combine.combine(PLAYER, "water", "air"), () -> combine.combine(PLAYER, "water", "air"));
 	}
 
 	@Test
 	void concurrentFirstCombinesOfTwoPairsWithTheSameResultShareTheItem() throws Exception {
-		assertOnlyOneCreates("Cloud", () -> combine.combine("fire", "water"), () -> combine.combine("earth", "air"));
+		assertOnlyOneCreates("Cloud", () -> combine.combine(PLAYER, "fire", "water"), () -> combine.combine(PLAYER, "earth", "air"));
 
 		assertThat(recipes.findAll())
 				.filteredOn(recipe -> recipe.getResult().getName().equals("Cloud"))
 				.hasSize(2);
+	}
+
+	@Test
+	void concurrentFirstCombinesByOneUserAddTheItemOnce() throws Exception {
+		assertOnlyOneCreates("Fog", () -> combine.combine(PLAYER, "water", "earth"),
+				() -> combine.combine(PLAYER, "earth", "water"));
+
+		assertThat(collectionRows(PLAYER, "Fog")).isEqualTo(1);
+	}
+
+	@Test
+	void concurrentKnownCombinesByOneUserAddTheItemOnce() throws Exception {
+		when(generator.generate(any(), any())).thenReturn(new GeneratedItem("Smoke", "🌫️", List.of("gas")));
+		combine.combine(PLAYER, "fire", "air");
+		CyclicBarrier ready = new CyclicBarrier(2);
+		Callable<CombineResult> known = () -> {
+			ready.await(5, SECONDS);
+			return combine.combine(TestPlayer.OTHER_USERNAME, "air", "fire");
+		};
+
+		try (ExecutorService threads = Executors.newFixedThreadPool(2)) {
+			Future<CombineResult> first = threads.submit(known);
+			Future<CombineResult> second = threads.submit(known);
+			first.get(10, SECONDS);
+			second.get(10, SECONDS);
+		}
+
+		assertThat(collectionRows(TestPlayer.OTHER_USERNAME, "Smoke")).isEqualTo(1);
+	}
+
+	private int collectionRows(String username, String itemName) {
+		return jdbc.queryForObject("select count(*) from user_item ui join user u on u.id = ui.user_id "
+				+ "join item i on i.id = ui.item_id where u.username = ? and i.name = ?",
+				Integer.class, username, itemName);
 	}
 
 	/** Runs both combines at once, after both got the same generated item, and expects one to create it. */

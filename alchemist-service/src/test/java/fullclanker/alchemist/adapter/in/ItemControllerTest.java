@@ -5,11 +5,14 @@ import fullclanker.alchemist.domain.model.Item;
 import fullclanker.alchemist.domain.model.Tag;
 import fullclanker.alchemist.domain.port.out.ItemRepository;
 import fullclanker.alchemist.domain.port.out.TagRepository;
+import fullclanker.alchemist.domain.port.out.UserItemRepository;
+import fullclanker.alchemist.domain.port.out.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
+import org.springframework.http.HttpHeaders;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,6 +35,18 @@ class ItemControllerTest {
 
 	@Autowired
 	private TagRepository tags;
+
+	@Autowired
+	private UserRepository users;
+
+	@Autowired
+	private UserItemRepository userItems;
+
+	private Item saveItemOwnedBy(String username, Item item) {
+		Item saved = items.save(item);
+		userItems.addIfMissing(users.findByUsernameIgnoreCase(username).orElseThrow(), saved);
+		return saved;
+	}
 
 	@Test
 	void getItemsReturnsBaseItemsInDiscoveryOrder() {
@@ -64,7 +79,7 @@ class ItemControllerTest {
 	void filterByTwoTagsReturnsOnlyItemsWithBoth() {
 		Tag hot = tags.findByName("hot").orElseThrow();
 		Tag solid = tags.findByName("solid").orElseThrow();
-		items.save(new Item("lava", "🌋", Set.of(hot, solid)));
+		saveItemOwnedBy(TestPlayer.USERNAME, new Item("lava", "🌋", Set.of(hot, solid)));
 
 		assertThat(mvc.get().uri("/items").param("tag", "hot", "solid"))
 				.hasStatusOk()
@@ -76,12 +91,38 @@ class ItemControllerTest {
 	void filterByCommaSeparatedTagsReturnsOnlyItemsWithBoth() {
 		Tag hot = tags.findByName("hot").orElseThrow();
 		Tag solid = tags.findByName("solid").orElseThrow();
-		items.save(new Item("lava", "🌋", Set.of(hot, solid)));
+		saveItemOwnedBy(TestPlayer.USERNAME, new Item("lava", "🌋", Set.of(hot, solid)));
 
 		assertThat(mvc.get().uri("/items").param("tag", "hot, solid"))
 				.hasStatusOk()
 				.bodyJson()
 				.extractingPath("$[*].name").asArray().containsExactly("lava");
+	}
+
+	@Test
+	void anotherUsersDiscoveryIsNotInMyItems() {
+		saveItemOwnedBy(TestPlayer.OTHER_USERNAME, new Item("steam", "🌫️", Set.of()));
+
+		assertThat(mvc.get().uri("/items"))
+				.hasStatusOk()
+				.bodyJson()
+				.extractingPath("$[*].name").asArray().containsExactly("fire", "water", "earth", "air");
+		assertThat(mvc.get().uri("/items")
+				.header(HttpHeaders.AUTHORIZATION, TestPlayer.basicAuth(TestPlayer.OTHER_USERNAME)))
+				.hasStatusOk()
+				.bodyJson()
+				.extractingPath("$[*].name").asArray().containsExactly("fire", "water", "earth", "air", "steam");
+	}
+
+	@Test
+	void filterByTagOnlySearchesMyItems() {
+		Tag hot = tags.findByName("hot").orElseThrow();
+		saveItemOwnedBy(TestPlayer.OTHER_USERNAME, new Item("lava", "🌋", Set.of(hot)));
+
+		assertThat(mvc.get().uri("/items").param("tag", "hot"))
+				.hasStatusOk()
+				.bodyJson()
+				.extractingPath("$[*].name").asArray().containsExactly("fire");
 	}
 
 	@Test

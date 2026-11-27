@@ -38,3 +38,4 @@ build/
 .env
 cookies.txt
 docs/ai-issue-workflow.md
+CLAUDE.local.md

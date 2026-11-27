@@ -4,6 +4,7 @@ import fullclanker.alchemist.domain.dto.CombineResult;
 
 public interface CombineItems {
 
-	CombineResult combine(String nameA, String nameB);
+	/** Combines two items from the user's collection and adds the result to it. */
+	CombineResult combine(String username, String nameA, String nameB);
 
 }

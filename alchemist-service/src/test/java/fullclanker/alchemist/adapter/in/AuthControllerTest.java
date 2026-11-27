@@ -155,6 +155,17 @@ class AuthControllerTest {
 	}
 
 	@Test
+	void signUpGivesExactlyTheFourBaseItems() throws Exception {
+		givenUser("newbie", PASSWORD);
+
+		HttpResponse<String> response = send(withBasic(request("/items"), "newbie", PASSWORD));
+
+		assertThat(response.statusCode()).isEqualTo(200);
+		assertThat(new JsonContent(response.body())).extractingPath("$[*].name").asArray()
+				.containsExactly("fire", "water", "earth", "air");
+	}
+
+	@Test
 	void signUpDoesNotLogIn() throws Exception {
 		HttpResponse<String> response = signUp(credentials("dora", PASSWORD));
 

@@ -12,10 +12,24 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 @Entity
 public class Item {
+
+	/** One of the items every user starts with, with its emoji and single tag. */
+	public record Base(String name, String emoji, String tag) {
+	}
+
+	/** The items every user starts with; BaseItemSeeder creates them. */
+	public static final List<Base> BASE_ITEMS = List.of(
+			new Base("fire", "🔥", "hot"),
+			new Base("water", "💧", "fluid"),
+			new Base("earth", "🌍", "solid"),
+			new Base("air", "💨", "gas"));
+
+	public static final List<String> BASE_NAMES = BASE_ITEMS.stream().map(Base::name).toList();
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)

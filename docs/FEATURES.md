@@ -7,7 +7,7 @@
 - [x] AI decides the result of the merge
 - [x] Merging the same pair always gives the same result (A + B = B + A)
 - [x] User can only merge items from their collection (an item can be merged with itself)
-- [ ] Each user has their own collection; items and recipes are shared, so a pair is generated once for everyone
+- [x] Each user has their own collection; items and recipes are shared, so a pair is generated once for everyone
 - [ ] User sees their own items and recipes by default, and can ask for everyone's (e.g. "what did others discover with iron?")
 - [ ] Each item and recipe shows who discovered it first
 - [ ] A merge says whether the item is new for the user and whether it is a first discovery (new for everyone)
