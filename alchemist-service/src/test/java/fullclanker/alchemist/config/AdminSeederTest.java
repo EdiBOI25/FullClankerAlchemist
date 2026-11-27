@@ -130,7 +130,7 @@ class AdminSeederTest {
 
 		User boss = user("boss");
 		assertThat(Item.BASE_NAMES).allSatisfy(name -> assertThat(
-				userItems.existsByUserAndItem(boss, items.findByNameIgnoreCase(name).orElseThrow())).isTrue());
+				userItems.existsByUser_IdAndItem_Id(boss.getId(), items.findByNameIgnoreCase(name).orElseThrow().getId())).isTrue());
 	}
 
 	@Test

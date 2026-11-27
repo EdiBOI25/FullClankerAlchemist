@@ -39,8 +39,8 @@ class UserItemRepositoryTest {
 		Item water = saveItem("water");
 		userItems.saveAndFlush(new UserItem(alice, fire));
 
-		assertThat(userItems.existsByUserAndItem(alice, fire)).isTrue();
-		assertThat(userItems.existsByUserAndItem(alice, water)).isFalse();
+		assertThat(userItems.existsByUser_IdAndItem_Id(alice.getId(), fire.getId())).isTrue();
+		assertThat(userItems.existsByUser_IdAndItem_Id(alice.getId(), water.getId())).isFalse();
 	}
 
 	@Test
@@ -54,6 +54,15 @@ class UserItemRepositoryTest {
 		userItems.flush();
 
 		assertThat(rows(alice, fire)).isEqualTo(1);
+	}
+
+	@Test
+	void addIfMissingRejectsAnUnsavedItem() {
+		User alice = saveUser("alice");
+
+		assertThatThrownBy(() -> userItems.addIfMissing(alice, new Item("unsaved", null, Set.of())))
+				.isInstanceOf(DataAccessException.class)
+				.hasMessageContaining("NOT NULL constraint failed");
 	}
 
 	@Test

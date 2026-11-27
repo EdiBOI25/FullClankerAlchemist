@@ -47,28 +47,33 @@ public class CombineService implements CombineItems {
 
 	@Override
 	public CombineResult combine(String username, String nameA, String nameB) {
-		User user = users.findByUsernameIgnoreCase(username).orElseThrow();
-		Item itemA = findOwnedItem(user, nameA);
-		Item itemB = findOwnedItem(user, nameB);
+		User user = users.findByUsernameIgnoreCase(username)
+				.orElseThrow(() -> new IllegalStateException("Unknown user " + username));
+		Item itemA = findOwnedItem(user, nameA, null);
+		Item itemB = findOwnedItem(user, nameB, itemA);
 		Item left = itemA.getId() <= itemB.getId() ? itemA : itemB;
 		Item right = left == itemA ? itemB : itemA;
 
 		return recipes.findByItemA_IdAndItemB_Id(left.getId(), right.getId())
-				.map(recipe -> transactions.execute(status -> {
-					userItems.addIfMissing(user, recipe.getResult());
+				.map(recipe -> {
+					// Checked outside a transaction so a repeat combine doesn't take the write lock (ADR-0012)
+					if (!userItems.existsByUser_IdAndItem_Id(user.getId(), recipe.getResult().getId())) {
+						transactions.executeWithoutResult(status -> userItems.addIfMissing(user, recipe.getResult()));
+					}
 					return new CombineResult(ItemDto.from(recipe.getResult()), false);
-				}))
+				})
 				.orElseGet(() -> generate(user, left, right));
 	}
 
-	/** An item the user doesn't own is reported like an unknown one. */
-	private Item findOwnedItem(User user, String name) {
+	/** An item the user doesn't own is reported like an unknown one; {@code checked} is an item already found owned, so a self-combine checks once. */
+	private Item findOwnedItem(User user, String name, Item checked) {
 		String normalizedName = name == null ? "" : name.trim();
 		if (normalizedName.isBlank()) {
 			throw new IllegalArgumentException("Item name cannot be blank");
 		}
 		return items.findByNameIgnoreCase(normalizedName)
-				.filter(item -> userItems.existsByUserAndItem(user, item))
+				.filter(item -> (checked != null && item.getId().equals(checked.getId()))
+						|| userItems.existsByUser_IdAndItem_Id(user.getId(), item.getId()))
 				.orElseThrow(() -> new ItemNotFoundException(normalizedName));
 	}
 
