@@ -15,6 +15,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
@@ -77,6 +78,47 @@ class CombineControllerTest {
 				.bodyJson();
 
 		response.extractingPath("$.detail").isEqualTo("Unknown item: unknown");
+	}
+
+	@Test
+	void itemOutsideTheCollectionReturnsNotFoundWithoutCallingTheAi() {
+		items.saveAndFlush(new Item("lava", "🌋", Set.of()));
+
+		var response = assertThat(mvc.post().uri("/combine")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("""
+						{"a":"lava","b":"fire"}
+						"""))
+				.hasStatus(404)
+				.hasContentType(MediaType.APPLICATION_PROBLEM_JSON)
+				.bodyJson();
+
+		response.extractingPath("$.detail").isEqualTo("Unknown item: lava");
+		verifyNoInteractions(generator);
+	}
+
+	@Test
+	void resultJoinsTheLoggedInUsersCollectionOnly() {
+		Item fire = items.findByNameIgnoreCase("fire").orElseThrow();
+		Item water = items.findByNameIgnoreCase("water").orElseThrow();
+		Item steam = items.saveAndFlush(new Item("steam", "🌫️", Set.of()));
+		recipes.saveAndFlush(new Recipe(fire, water, steam));
+		String other = TestPlayer.basicAuth(TestPlayer.OTHER_USERNAME);
+
+		assertThat(mvc.post().uri("/combine")
+				.header(HttpHeaders.AUTHORIZATION, other)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("""
+						{"a":"fire","b":"water"}
+						"""))
+				.hasStatusOk();
+
+		assertThat(mvc.get().uri("/items").header(HttpHeaders.AUTHORIZATION, other))
+				.bodyJson()
+				.extractingPath("$[*].name").asArray().contains("steam");
+		assertThat(mvc.get().uri("/items"))
+				.bodyJson()
+				.extractingPath("$[*].name").asArray().doesNotContain("steam");
 	}
 
 	@Test

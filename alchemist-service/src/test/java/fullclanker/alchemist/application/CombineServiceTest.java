@@ -1,5 +1,6 @@
 package fullclanker.alchemist.application;
 
+import fullclanker.alchemist.TestPlayer;
 import jakarta.persistence.EntityManager;
 import fullclanker.alchemist.domain.dto.CombineResult;
 import fullclanker.alchemist.domain.dto.GeneratedItem;
@@ -12,9 +13,13 @@ import fullclanker.alchemist.domain.port.out.ItemGenerator;
 import fullclanker.alchemist.domain.port.out.ItemRepository;
 import fullclanker.alchemist.domain.port.out.RecipeRepository;
 import fullclanker.alchemist.domain.port.out.TagRepository;
+import fullclanker.alchemist.domain.port.out.UserItemRepository;
+import fullclanker.alchemist.domain.port.out.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,8 +35,12 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @SpringBootTest
+@Import(TestPlayer.class)
 @Transactional
 class CombineServiceTest {
+
+	private static final String PLAYER = TestPlayer.USERNAME;
+	private static final String OTHER = TestPlayer.OTHER_USERNAME;
 
 	@Autowired
 	private CombineItems combine;
@@ -46,6 +55,15 @@ class CombineServiceTest {
 	private TagRepository tags;
 
 	@Autowired
+	private UserRepository users;
+
+	@Autowired
+	private UserItemRepository userItems;
+
+	@Autowired
+	private JdbcTemplate jdbc;
+
+	@Autowired
 	private EntityManager em;
 
 	@MockitoBean
@@ -53,7 +71,7 @@ class CombineServiceTest {
 
 	@Test
 	void unknownFirstItemIsRejected() {
-		assertThatThrownBy(() -> combine.combine("unknown", "fire"))
+		assertThatThrownBy(() -> combine.combine(PLAYER, "unknown", "fire"))
 				.isInstanceOf(ItemNotFoundException.class)
 				.hasMessage("Unknown item: unknown");
 		verifyNoInteractions(generator);
@@ -61,7 +79,7 @@ class CombineServiceTest {
 
 	@Test
 	void unknownSecondItemIsRejected() {
-		assertThatThrownBy(() -> combine.combine("fire", "unknown"))
+		assertThatThrownBy(() -> combine.combine(PLAYER, "fire", "unknown"))
 				.isInstanceOf(ItemNotFoundException.class)
 				.hasMessage("Unknown item: unknown");
 		verifyNoInteractions(generator);
@@ -74,7 +92,7 @@ class CombineServiceTest {
 		Item steam = items.saveAndFlush(new Item("steam", "🌫️", Set.of()));
 		recipes.saveAndFlush(new Recipe(fire, water, steam));
 
-		CombineResult result = combine.combine("FiRe", "WATER");
+		CombineResult result = combine.combine(PLAYER, "FiRe", "WATER");
 
 		assertThat(result.item().name()).isEqualTo("steam");
 		assertThat(result.isNew()).isFalse();
@@ -88,7 +106,7 @@ class CombineServiceTest {
 		Item steam = items.saveAndFlush(new Item("steam", "🌫️", Set.of()));
 		recipes.saveAndFlush(new Recipe(fire, water, steam));
 
-		CombineResult result = combine.combine("fire", "water");
+		CombineResult result = combine.combine(PLAYER, "fire", "water");
 
 		assertThat(result.item().name()).isEqualTo("steam");
 		assertThat(result.isNew()).isFalse();
@@ -102,7 +120,7 @@ class CombineServiceTest {
 		Item steam = items.saveAndFlush(new Item("steam", "🌫️", Set.of()));
 		recipes.saveAndFlush(new Recipe(fire, water, steam));
 
-		CombineResult result = combine.combine("water", "fire");
+		CombineResult result = combine.combine(PLAYER, "water", "fire");
 
 		assertThat(result.item().name()).isEqualTo("steam");
 		assertThat(result.isNew()).isFalse();
@@ -110,11 +128,11 @@ class CombineServiceTest {
 
 	@Test
 	void itemCanCombineWithItself() {
-		Item stone = items.saveAndFlush(new Item("stone", "🪨", Set.of()));
+		Item stone = saveOwnedItem("stone", "🪨");
 		Item same = items.saveAndFlush(new Item("same", "🪩", Set.of()));
 		recipes.saveAndFlush(new Recipe(stone, stone, same));
 
-		CombineResult result = combine.combine("stone", "stone");
+		CombineResult result = combine.combine(PLAYER, "stone", "stone");
 
 		assertThat(result.item().name()).isEqualTo("same");
 		assertThat(result.isNew()).isFalse();
@@ -122,11 +140,11 @@ class CombineServiceTest {
 
 	@Test
 	void unknownPairGeneratesTheItemAndSavesTheRecipe() {
-		Item ice = items.saveAndFlush(new Item("ice", "🧊", Set.of()));
-		Item lava = items.saveAndFlush(new Item("lava", "🌋", Set.of()));
+		Item ice = saveOwnedItem("ice", "🧊");
+		Item lava = saveOwnedItem("lava", "🌋");
 		when(generator.generate("ice", "lava")).thenReturn(new GeneratedItem(" Obsidian ", "🪨", List.of("volcanic")));
 
-		CombineResult result = combine.combine("lava", "ice");
+		CombineResult result = combine.combine(PLAYER, "lava", "ice");
 		em.flush();
 		em.clear();
 
@@ -144,11 +162,11 @@ class CombineServiceTest {
 	@Test
 	void sameUnknownPairAgainComesFromTheDb() {
 		when(generator.generate(any(), any())).thenReturn(new GeneratedItem("Steam", "💨", List.of("gas")));
-		combine.combine("fire", "water");
+		combine.combine(PLAYER, "fire", "water");
 		em.flush();
 		em.clear();
 
-		CombineResult again = combine.combine("water", "fire");
+		CombineResult again = combine.combine(PLAYER, "water", "fire");
 
 		assertThat(again.isNew()).isFalse();
 		assertThat(again.item().name()).isEqualTo("Steam");
@@ -159,7 +177,7 @@ class CombineServiceTest {
 	void generatedTagsAreTrimmedAndLowercased() {
 		when(generator.generate(any(), any())).thenReturn(new GeneratedItem("Magma", "🌋", List.of(" Volcanic ")));
 
-		combine.combine("fire", "earth");
+		combine.combine(PLAYER, "fire", "earth");
 
 		assertThat(savedTags("magma")).extracting(Tag::getName).containsExactly("volcanic");
 	}
@@ -169,7 +187,7 @@ class CombineServiceTest {
 		long tagCount = tags.count();
 		when(generator.generate(any(), any())).thenReturn(new GeneratedItem("Magma", "🌋", List.of(" Hot ")));
 
-		combine.combine("fire", "earth");
+		combine.combine(PLAYER, "fire", "earth");
 
 		assertThat(savedTags("magma")).extracting(Tag::getName).containsExactly("hot");
 		assertThat(tags.count()).isEqualTo(tagCount);
@@ -180,7 +198,7 @@ class CombineServiceTest {
 		long tagCount = tags.count();
 		when(generator.generate(any(), any())).thenReturn(new GeneratedItem("Magma", "🌋", List.of("glow", "Glow ")));
 
-		combine.combine("fire", "earth");
+		combine.combine(PLAYER, "fire", "earth");
 
 		assertThat(savedTags("magma")).extracting(Tag::getName).containsExactly("glow");
 		assertThat(tags.count()).isEqualTo(tagCount + 1);
@@ -189,12 +207,12 @@ class CombineServiceTest {
 	@Test
 	void existingNameFromTheAiReusesThatItem() {
 		Item steam = items.saveAndFlush(new Item("steam", "🌫️", Set.of()));
-		Item ice = items.saveAndFlush(new Item("ice", "🧊", Set.of()));
-		Item lava = items.saveAndFlush(new Item("lava", "🌋", Set.of()));
+		Item ice = saveOwnedItem("ice", "🧊");
+		Item lava = saveOwnedItem("lava", "🌋");
 		long itemCount = items.count();
 		when(generator.generate(any(), any())).thenReturn(new GeneratedItem(" STEAM ", "💨", List.of("vapor")));
 
-		CombineResult result = combine.combine("ice", "lava");
+		CombineResult result = combine.combine(PLAYER, "ice", "lava");
 		em.flush();
 		em.clear();
 
@@ -211,7 +229,7 @@ class CombineServiceTest {
 		long tagCount = tags.count();
 		when(generator.generate(any(), any())).thenReturn(new GeneratedItem("Steam", "💨", List.of("vapor")));
 
-		CombineResult result = combine.combine("fire", "water");
+		CombineResult result = combine.combine(PLAYER, "fire", "water");
 
 		assertThat(result.item().emoji()).isEqualTo("🌫️");
 		assertThat(result.item().tags()).containsExactly("gas");
@@ -227,7 +245,7 @@ class CombineServiceTest {
 		long itemCount = items.count();
 		when(generator.generate(any(), any())).thenReturn(new GeneratedItem("Fire", "🔥", List.of("hot")));
 
-		CombineResult result = combine.combine("fire", "air");
+		CombineResult result = combine.combine(PLAYER, "fire", "air");
 
 		assertThat(result.isNew()).isFalse();
 		assertThat(result.item().id()).isEqualTo(fire.getId());
@@ -244,9 +262,87 @@ class CombineServiceTest {
 		RuntimeException failure = new RuntimeException("AI down");
 		when(generator.generate(any(), any())).thenThrow(failure);
 
-		assertThatThrownBy(() -> combine.combine("fire", "air")).isSameAs(failure);
+		assertThatThrownBy(() -> combine.combine(PLAYER, "fire", "air")).isSameAs(failure);
 		assertThat(items.count()).isEqualTo(itemCount);
 		assertThat(recipes.findByItemA_IdAndItemB_Id(fire.getId(), air.getId())).isEmpty();
+	}
+
+	@Test
+	void itemOutsideTheCollectionIsRejectedLikeAnUnknownOne() {
+		items.saveAndFlush(new Item("lava", "🌋", Set.of()));
+
+		assertThatThrownBy(() -> combine.combine(PLAYER, "lava", "fire"))
+				.isInstanceOf(ItemNotFoundException.class)
+				.hasMessage("Unknown item: lava");
+		assertThatThrownBy(() -> combine.combine(PLAYER, "fire", "lava"))
+				.isInstanceOf(ItemNotFoundException.class)
+				.hasMessage("Unknown item: lava");
+		verifyNoInteractions(generator);
+	}
+
+	@Test
+	void newItemJoinsTheCollection() {
+		when(generator.generate(any(), any())).thenReturn(new GeneratedItem("Steam", "💨", List.of("gas")));
+
+		combine.combine(PLAYER, "fire", "water");
+
+		assertThat(collectionRows(PLAYER, "steam")).isEqualTo(1);
+	}
+
+	@Test
+	void pairDiscoveredByAnotherUserGivesTheItemWithoutCallingTheAi() {
+		when(generator.generate(any(), any())).thenReturn(new GeneratedItem("Steam", "💨", List.of("gas")));
+		combine.combine(PLAYER, "fire", "water");
+		em.flush();
+		em.clear();
+
+		CombineResult result = combine.combine(OTHER, "water", "fire");
+
+		assertThat(result.item().name()).isEqualTo("Steam");
+		assertThat(result.isNew()).isFalse();
+		assertThat(collectionRows(OTHER, "steam")).isEqualTo(1);
+		verify(generator, times(1)).generate(any(), any());
+	}
+
+	@Test
+	void sameCombineTwiceAddsTheItemOnce() {
+		when(generator.generate(any(), any())).thenReturn(new GeneratedItem("Steam", "💨", List.of("gas")));
+
+		combine.combine(PLAYER, "fire", "water");
+		combine.combine(PLAYER, "fire", "water");
+
+		assertThat(collectionRows(PLAYER, "steam")).isEqualTo(1);
+	}
+
+	@Test
+	void resultTheUserAlreadyOwnsAddsNothing() {
+		Item fire = items.findByNameIgnoreCase("fire").orElseThrow();
+		Item air = items.findByNameIgnoreCase("air").orElseThrow();
+		recipes.saveAndFlush(new Recipe(fire, air, fire));
+
+		combine.combine(PLAYER, "fire", "air");
+
+		assertThat(collectionRows(PLAYER, "fire")).isEqualTo(1);
+		assertThat(collectionSize(PLAYER)).isEqualTo(4);
+	}
+
+	private Item saveOwnedItem(String name, String emoji) {
+		Item item = items.saveAndFlush(new Item(name, emoji, Set.of()));
+		userItems.addIfMissing(users.findByUsernameIgnoreCase(PLAYER).orElseThrow(), item);
+		return item;
+	}
+
+	private int collectionRows(String username, String itemName) {
+		em.flush();
+		return jdbc.queryForObject("select count(*) from user_item ui join user u on u.id = ui.user_id "
+				+ "join item i on i.id = ui.item_id where u.username = ? and i.name = ? collate nocase",
+				Integer.class, username, itemName);
+	}
+
+	private int collectionSize(String username) {
+		em.flush();
+		return jdbc.queryForObject("select count(*) from user_item ui join user u on u.id = ui.user_id "
+				+ "where u.username = ?", Integer.class, username);
 	}
 
 	private Set<Tag> savedTags(String itemName) {
