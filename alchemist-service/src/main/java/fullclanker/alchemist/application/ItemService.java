@@ -19,19 +19,19 @@ public class ItemService implements FindItems {
 	}
 
 	@Override
-	public List<ItemDto> findAll() {
-		return items.findAllByOrderByIdAsc().stream()
+	public List<ItemDto> findAll(String username) {
+		return items.findAllOwnedBy(username).stream()
 				.map(ItemDto::from)
 				.toList();
 	}
 
 	@Override
-	public List<ItemDto> findByTags(Collection<String> tags) {
+	public List<ItemDto> findByTags(String username, Collection<String> tags) {
 		List<String> wanted = tags.stream()
 				.map(tag -> tag.toLowerCase(Locale.ROOT))
 				.toList();
 		// Shortcut: filters every item in memory; move to a JPQL query if the collection grows large
-		return findAll().stream()
+		return findAll(username).stream()
 				.filter(item -> item.tags().containsAll(wanted))
 				.toList();
 	}

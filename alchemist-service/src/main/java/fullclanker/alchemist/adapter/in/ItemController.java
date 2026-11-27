@@ -5,6 +5,8 @@ import fullclanker.alchemist.domain.port.in.FindItems;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -24,19 +26,20 @@ public class ItemController {
 
 	@GetMapping("/items")
 	public List<ItemDto> findAll(
+			@AuthenticationPrincipal UserDetails user,
 			@RequestParam(name = "tag", required = false)
 			@Size(min = 1)
 			List<@NotBlank @Size(max = 30) String> tags,
 			HttpServletRequest request) {
 		rejectArrayParameter(request);
 		if (tags == null) {
-			return findItems.findAll();
+			return findItems.findAll(user.getUsername());
 		}
 		validateRawTags(request.getParameterValues("tag"));
 		List<String> normalizedTags = tags.stream()
 				.map(String::trim)
 				.toList();
-		return findItems.findByTags(normalizedTags);
+		return findItems.findByTags(user.getUsername(), normalizedTags);
 	}
 
 	private static void rejectArrayParameter(HttpServletRequest request) {

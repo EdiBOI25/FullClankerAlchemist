@@ -7,8 +7,10 @@ import java.util.List;
 
 public interface FindItems {
 
-	List<ItemDto> findAll();
+	/** The user's collection, in discovery order. */
+	List<ItemDto> findAll(String username);
 
-	List<ItemDto> findByTags(Collection<String> tags);
+	/** The items in the user's collection that have every tag. */
+	List<ItemDto> findByTags(String username, Collection<String> tags);
 
 }
